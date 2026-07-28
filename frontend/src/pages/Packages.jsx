@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
@@ -18,26 +17,26 @@ export default function Packages() {
   });
 
   useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        setLoading(true);
+        const params = new URLSearchParams();
+        if (filters.search) params.append('search', filters.search);
+        if (filters.minPrice) params.append('minPrice', filters.minPrice);
+        if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
+        if (filters.days) params.append('days', filters.days);
+
+        const response = await axios.get(`${API_URL}/packages?${params}`);
+        setPackages(response.data);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching packages:', error);
+        setLoading(false);
+      }
+    };
+
     fetchPackages();
-  }, [filters, fetchPackages]);
-
-  const fetchPackages = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (filters.search) params.append('search', filters.search);
-      if (filters.minPrice) params.append('minPrice', filters.minPrice);
-      if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
-      if (filters.days) params.append('days', filters.days);
-
-      const response = await axios.get(`${API_URL}/packages?${params}`);
-      setPackages(response.data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching packages:', error);
-      setLoading(false);
-    }
-  };
+  }, [filters]);
 
   const handleFilterChange = (key, value) => {
     setFilters({ ...filters, [key]: value });
