@@ -1,3 +1,4 @@
+import AdminPanel from './pages/AdminPanel';
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
@@ -20,6 +21,7 @@ function App() {
             <Route path="/packages/:id" element={<PackageDetail />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/admin" element={<AdminPanel />} />
           </Routes>
         </main>
         <Footer />
