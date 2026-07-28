@@ -66,7 +66,7 @@ export default function AdminPanel() {
     setMessage('');
 
     try {
-      const response = await axios.post(`${API_URL}/admin/packages`, {
+      await axios.post(`${API_URL}/admin/packages`, {
         ...packageForm,
         price: parseFloat(packageForm.price),
         days: parseInt(packageForm.days)
