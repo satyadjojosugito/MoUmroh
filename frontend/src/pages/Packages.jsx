@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
@@ -18,7 +19,7 @@ export default function Packages() {
 
   useEffect(() => {
     fetchPackages();
-  }, [filters]);
+  }, [filters, fetchPackages]);
 
   const fetchPackages = async () => {
     try {
