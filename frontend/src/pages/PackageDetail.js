@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, Users, Calendar, CheckCircle, MapPin, Utensils } from 'lucide-react';
+import { Star, Users, Calendar, CheckCircle, MapPin } from 'lucide-react';
 import { SAMPLE_PACKAGES } from '../data/packages';
 
 export default function PackageDetail() {
