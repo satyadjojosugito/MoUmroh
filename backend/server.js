@@ -1,257 +1,125 @@
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
-const { createClient } = require('@supabase/supabase-js');
-
-dotenv.config();
-
+require('dotenv').config();
+ 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
-// Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-);
-
+ 
 // Middleware
 app.use(cors());
 app.use(express.json());
-
-// ==================== PUBLIC API ENDPOINTS ====================
-
-// Get all packages with agency details
-app.get('/api/packages', async (req, res) => {
+ 
+// Import packages data
+const packages = require('./data/packages');
+ 
+// Routes
+ 
+// Get all packages
+app.get('/api/packages', (req, res) => {
   try {
+    // Optional: Add search/filter functionality
     const { search, minPrice, maxPrice, days } = req.query;
-
-    let query = supabase
-      .from('packages')
-      .select(`
-        *,
-        agencies(id, name, email, phone, website)
-      `);
-
-    // Apply filters
+ 
+    let filtered = [...packages];
+ 
+    // Search by name
     if (search) {
-      query = query.or(`name.ilike.%${search}%,destination.ilike.%${search}%`);
+      filtered = filtered.filter(pkg =>
+        pkg.name.toLowerCase().includes(search.toLowerCase()) ||
+        pkg.description.toLowerCase().includes(search.toLowerCase())
+      );
     }
+ 
+    // Filter by price range
     if (minPrice) {
-      query = query.gte('price', parseFloat(minPrice));
+      filtered = filtered.filter(pkg => pkg.price >= parseInt(minPrice));
     }
     if (maxPrice) {
-      query = query.lte('price', parseFloat(maxPrice));
+      filtered = filtered.filter(pkg => pkg.price <= parseInt(maxPrice));
     }
+ 
+    // Filter by duration
     if (days) {
-      query = query.eq('days', parseInt(days));
+      const [min, max] = days.split('-').map(d => parseInt(d));
+      filtered = filtered.filter(pkg => {
+        if (max) return pkg.duration >= min && pkg.duration <= max;
+        return pkg.duration === min;
+      });
     }
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-    res.json(data);
+ 
+    res.json(filtered);
   } catch (error) {
-    console.error('Error fetching packages:', error);
-    res.status(500).json({ error: 'Failed to fetch packages' });
+    res.status(500).json({ error: error.message });
   }
 });
-
+ 
 // Get single package by ID
-app.get('/api/packages/:id', async (req, res) => {
+app.get('/api/packages/:id', (req, res) => {
   try {
-    const { id } = req.params;
-
-    const { data, error } = await supabase
-      .from('packages')
-      .select(`
-        *,
-        agencies(id, name, email, phone, website, description)
-      `)
-      .eq('id', id)
-      .single();
-
-    if (error) throw error;
-    res.json(data);
-  } catch (error) {
-    console.error('Error fetching package:', error);
-    res.status(500).json({ error: 'Package not found' });
-  }
-});
-
-// Search packages (POST)
-app.post('/api/packages/search', async (req, res) => {
-  try {
-    const { search, minPrice, maxPrice, days, minRating } = req.body;
-
-    let query = supabase.from('packages').select(`
-      *,
-      agencies(id, name)
-    `);
-
-    if (search) {
-      query = query.or(`name.ilike.%${search}%,destination.ilike.%${search}%`);
+    const package_ = packages.find(p => p.id === parseInt(req.params.id));
+ 
+    if (!package_) {
+      return res.status(404).json({ error: 'Package not found' });
     }
-    if (minPrice) query = query.gte('price', minPrice);
-    if (maxPrice) query = query.lte('price', maxPrice);
-    if (days) query = query.eq('days', days);
-    if (minRating) query = query.gte('rating', minRating);
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-    res.json(data);
+ 
+    res.json(package_);
   } catch (error) {
-    console.error('Error searching packages:', error);
-    res.status(500).json({ error: 'Search failed' });
+    res.status(500).json({ error: error.message });
   }
 });
-
-// Get all agencies
-app.get('/api/agencies', async (req, res) => {
+ 
+// Search endpoint
+app.post('/api/packages/search', (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('agencies')
-      .select('*')
-      .order('name');
-
-    if (error) throw error;
-    res.json(data);
-  } catch (error) {
-    console.error('Error fetching agencies:', error);
-    res.status(500).json({ error: 'Failed to fetch agencies' });
-  }
-});
-
-// ==================== ADMIN API ENDPOINTS ====================
-
-// Add new package (Admin)
-app.post('/api/admin/packages', async (req, res) => {
-  try {
-    const {
-      agency_id,
-      name,
-      destination,
-      description,
-      price,
-      days,
-      rating,
-      reviews,
-      image,
-      max_participants,
-      departure,
-      itinerary,
-      inclusions
-    } = req.body;
-
-    // Validation
-    if (!agency_id || !name || !destination || !price || !days) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    const { name, minPrice, maxPrice, duration } = req.body;
+ 
+    let filtered = [...packages];
+ 
+    if (name) {
+      filtered = filtered.filter(pkg =>
+        pkg.name.toLowerCase().includes(name.toLowerCase())
+      );
     }
-
-    const { data, error } = await supabase
-      .from('packages')
-      .insert([{
-        agency_id,
-        name,
-        destination,
-        description,
-        price: parseFloat(price),
-        days: parseInt(days),
-        rating: rating || 5,
-        reviews: reviews || 0,
-        image,
-        max_participants: max_participants || 20,
-        departure,
-        itinerary: itinerary || [],
-        inclusions: inclusions || []
-      }])
-      .select();
-
-    if (error) throw error;
-    res.status(201).json(data[0]);
-  } catch (error) {
-    console.error('Error creating package:', error);
-    res.status(500).json({ error: 'Failed to create package' });
-  }
-});
-
-// Update package (Admin)
-app.put('/api/admin/packages/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updates = req.body;
-
-    const { data, error } = await supabase
-      .from('packages')
-      .update(updates)
-      .eq('id', id)
-      .select();
-
-    if (error) throw error;
-    res.json(data[0]);
-  } catch (error) {
-    console.error('Error updating package:', error);
-    res.status(500).json({ error: 'Failed to update package' });
-  }
-});
-
-// Delete package (Admin)
-app.delete('/api/admin/packages/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const { error } = await supabase
-      .from('packages')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-    res.json({ message: 'Package deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting package:', error);
-    res.status(500).json({ error: 'Failed to delete package' });
-  }
-});
-
-// Add new agency (Admin)
-app.post('/api/admin/agencies', async (req, res) => {
-  try {
-    const { name, email, phone, address, city, country, website, description, logo_url } = req.body;
-
-    if (!name) {
-      return res.status(400).json({ error: 'Agency name is required' });
+ 
+    if (minPrice) {
+      filtered = filtered.filter(pkg => pkg.price >= minPrice);
     }
-
-    const { data, error } = await supabase
-      .from('agencies')
-      .insert([{
-        name,
-        email,
-        phone,
-        address,
-        city,
-        country,
-        website,
-        description,
-        logo_url
-      }])
-      .select();
-
-    if (error) throw error;
-    res.status(201).json(data[0]);
+ 
+    if (maxPrice) {
+      filtered = filtered.filter(pkg => pkg.price <= maxPrice);
+    }
+ 
+    if (duration) {
+      filtered = filtered.filter(pkg => pkg.duration === duration);
+    }
+ 
+    res.json(filtered);
   } catch (error) {
-    console.error('Error creating agency:', error);
-    res.status(500).json({ error: 'Failed to create agency' });
+    res.status(500).json({ error: error.message });
   }
 });
-
-// Health check
+ 
+// Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'Server is running with Supabase integration' });
+  res.json({ status: 'Server is running', timestamp: new Date() });
 });
-
+ 
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Endpoint not found' });
+});
+ 
+// Error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Internal server error' });
+});
+ 
 // Start server
 app.listen(PORT, () => {
-  console.log(`MoUmroh API running on port ${PORT}`);
-  console.log(`Connected to Supabase: ${process.env.SUPABASE_URL}`);
+  console.log(`✅ Server is running on http://localhost:${PORT}`);
+  console.log(`📦 Packages endpoint: http://localhost:${PORT}/api/packages`);
+  console.log(`💊 Health check: http://localhost:${PORT}/api/health`);
 });
+ 
+module.exports = app;
