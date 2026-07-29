@@ -18,7 +18,7 @@ const packages = require('./data/packages');
 app.get('/api/packages', (req, res) => {
   try {
     // Optional: Add search/filter functionality
-    const { search, minPrice, maxPrice, days } = req.query;
+    const { search, minPrice, maxPrice, days, departureCity, departureMonth, departureYear } = req.query;
  
     let filtered = [...packages];
  
@@ -47,6 +47,30 @@ app.get('/api/packages', (req, res) => {
       });
     }
  
+    // Filter by departure city
+    if (departureCity) {
+      filtered = filtered.filter(pkg => pkg.departureCity === departureCity);
+    }
+ 
+    // Filter by departure month and year
+    if (departureMonth || departureYear) {
+      filtered = filtered.filter(pkg => {
+        if (!pkg.departureDate) return false;
+        const date = new Date(pkg.departureDate);
+        const month = (date.getMonth() + 1).toString();
+        const year = date.getFullYear().toString();
+ 
+        if (departureMonth && departureYear) {
+          return month === departureMonth && year === departureYear;
+        } else if (departureMonth) {
+          return month === departureMonth;
+        } else if (departureYear) {
+          return year === departureYear;
+        }
+        return true;
+      });
+    }
+ 
     res.json(filtered);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -63,6 +87,77 @@ app.get('/api/packages/:id', (req, res) => {
     }
  
     res.json(package_);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+ 
+// Add new package
+app.post('/api/packages', (req, res) => {
+  try {
+    const { name, destination, price, duration, departureCity, departureDate, rating, image, description, agencies } = req.body;
+ 
+    // Validate required fields
+    if (!name || !destination || !price || !duration || !departureCity || !departureDate) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+ 
+    // Create new package
+    const newPackage = {
+      id: Math.max(...packages.map(p => p.id), 0) + 1,
+      name,
+      destination,
+      price: parseInt(price),
+      duration: parseInt(duration),
+      departureCity,
+      departureDate,
+      rating: parseInt(rating) || 5,
+      image: image || 'https://via.placeholder.com/400x300?text=No+Image',
+      description: description || '',
+      agencies: agencies || null,
+      inclusions: [],
+      itinerary: [],
+    };
+ 
+    packages.push(newPackage);
+    res.status(201).json(newPackage);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+ 
+// Update existing package
+app.put('/api/packages/:id', (req, res) => {
+  try {
+    const { name, destination, price, duration, departureCity, departureDate, rating, image, description, agencies } = req.body;
+    const packageIndex = packages.findIndex(p => p.id === parseInt(req.params.id));
+ 
+    if (packageIndex === -1) {
+      return res.status(404).json({ error: 'Package not found' });
+    }
+ 
+    // Validate required fields
+    if (!name || !destination || !price || !duration || !departureCity || !departureDate) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+ 
+    // Update package
+    const updatedPackage = {
+      ...packages[packageIndex],
+      name,
+      destination,
+      price: parseInt(price),
+      duration: parseInt(duration),
+      departureCity,
+      departureDate,
+      rating: parseInt(rating) || 5,
+      image: image || 'https://via.placeholder.com/400x300?text=No+Image',
+      description: description || '',
+      agencies: agencies || null,
+    };
+ 
+    packages[packageIndex] = updatedPackage;
+    res.json(updatedPackage);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -94,6 +189,21 @@ app.post('/api/packages/search', (req, res) => {
     }
  
     res.json(filtered);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+ 
+app.delete('/api/packages/:id', (req, res) => {
+  try {
+    const index = packages.findIndex(p => p.id === parseInt(req.params.id));
+ 
+    if (index === -1) {
+      return res.status(404).json({ error: 'Package not found' });
+    }
+ 
+    const deletedPackage = packages.splice(index, 1);
+    res.json({ message: 'Package deleted', package: deletedPackage[0] });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
