@@ -43,10 +43,11 @@ const AdminPanel = () => {
  
   const fetchAgencies = async () => {
     try {
-      // Start with empty agencies list
-      setAgencies([]);
+      const response = await axios.get('https://otwbcjjidiawkprxvrfo.supabase.co/functions/v1/get-agencies');
+      setAgencies(response.data);
     } catch (error) {
       console.error('Error fetching agencies:', error);
+      setAgencies([]);
     }
   };
  
@@ -181,31 +182,33 @@ const AdminPanel = () => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
- 
+
     try {
       if (!agencyFormData.name || !agencyFormData.email || !agencyFormData.phone) {
         setMessage('❌ Please fill in all required fields');
         setLoading(false);
         return;
       }
- 
+
       const newAgency = {
-        id: Math.max(...agencies.map(a => a.id), 0) + 1,
         name: agencyFormData.name,
         email: agencyFormData.email,
         phone: agencyFormData.phone,
         address: agencyFormData.address,
       };
- 
-      setAgencies([...agencies, newAgency]);
- 
+
+      await axios.post('https://otwbcjjidiawkprxvrfo.supabase.co/functions/v1/create-agency', newAgency);
+
+      // Refresh agencies list
+      await fetchAgencies();
+
       setAgencyFormData({
         name: '',
         email: '',
         phone: '',
         address: '',
       });
- 
+
       setMessage('✅ Agency added successfully!');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
@@ -230,11 +233,17 @@ const AdminPanel = () => {
   }
 };
  
-  const handleDeleteAgency = (id) => {
+  const handleDeleteAgency = async (id) => {
     if (window.confirm('Are you sure you want to delete this agency?')) {
-      setAgencies(agencies.filter(agency => agency.id !== id));
-      setMessage('✅ Agency deleted successfully!');
-      setTimeout(() => setMessage(''), 3000);
+      try {
+        await axios.delete(`https://otwbcjjidiawkprxvrfo.supabase.co/functions/v1/delete-agency/${id}`);
+        setAgencies(agencies.filter(agency => agency.id !== id));
+        setMessage('✅ Agency deleted successfully!');
+        setTimeout(() => setMessage(''), 3000);
+      } catch (error) {
+        setMessage('❌ Error deleting agency');
+        console.error('Error:', error);
+      }
     }
   };
  
