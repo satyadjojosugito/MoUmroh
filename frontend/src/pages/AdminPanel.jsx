@@ -34,7 +34,7 @@ const AdminPanel = () => {
  
   const fetchPackages = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/packages');
+      const response = await axios.get('https://otwbcjjidiawkprxvrfo.supabase.co/functions/v1/packages');
       setPackages(response.data);
     } catch (error) {
       console.error('Error fetching packages:', error);
@@ -113,13 +113,13 @@ const AdminPanel = () => {
       // Send to backend
       if (editingId) {
         // Update existing package
-        await axios.put(`http://localhost:5000/api/packages/${editingId}`, newPackage);
+        await axios.put(`https://otwbcjjidiawkprxvrfo.supabase.co/functions/v1/packages/${editingId}`, newPackage);
         setPackages(packages.map(pkg => pkg.id === editingId ? { ...newPackage, id: editingId } : pkg));
         setMessage('✅ Package updated successfully!');
         setEditingId(null);
       } else {
         // Add new package
-        const response = await axios.post('http://localhost:5000/api/packages', newPackage);
+        const response = await axios.post('https://otwbcjjidiawkprxvrfo.supabase.co/functions/v1/packages', newPackage);
         setPackages([...packages, response.data]);
         setMessage('✅ Package added successfully!');
       }
@@ -219,7 +219,7 @@ const AdminPanel = () => {
   const handleDeletePackage = async (id) => {
   if (window.confirm('Are you sure you want to delete this package?')) {
     try {
-      await axios.delete(`http://localhost:5000/api/packages/${id}`);
+      await axios.delete(`https://otwbcjjidiawkprxvrfo.supabase.co/functions/v1/packages/${id}`);
       setPackages(packages.filter(pkg => pkg.id !== id));
       setMessage('✅ Package deleted successfully!');
       setTimeout(() => setMessage(''), 3000);
