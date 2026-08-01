@@ -16,7 +16,7 @@ export default function Home() {
 
   const fetchPackages = async () => {
     try {
-      const response = await axios.get(`${API_URL}/packages`);
+      const response = await axios.get(`${API_URL}/get-packages`);
       setPackages(response.data.slice(0, 6)); // Show top 6
       setLoading(false);
     } catch (error) {
