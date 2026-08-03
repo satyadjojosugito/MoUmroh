@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
  
-const API_URL = process.env.REACT_APP_API_URL || 'https://otwbcjjidiawkprxvrfo.supabase.co/functions/v1';
+const API_URL = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
  
 export default function Packages() {
   const navigate = useNavigate();
@@ -35,7 +35,7 @@ export default function Packages() {
  
   const fetchAllPackages = async () => {
     try {
-      const response = await axios.get(`${API_URL}/get-packages`);
+      const response = await axios.get(`${API_URL}/packages`);
       const uniqueCities = [...new Set(response.data.map(pkg => pkg.departureCity))];
       setDepartureCities(uniqueCities.sort());
     } catch (error) {
@@ -54,7 +54,7 @@ export default function Packages() {
         if (filters.departureMonth) params.append('departureMonth', filters.departureMonth);
         if (filters.departureYear) params.append('departureYear', filters.departureYear);
  
-        const response = await axios.get(`${API_URL}/get-packages?${params}`);
+        const response = await axios.get(`${API_URL}/packages`);
         setPackages(response.data);
         setLoading(false);
       } catch (error) {
