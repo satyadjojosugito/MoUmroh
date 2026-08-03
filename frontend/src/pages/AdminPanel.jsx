@@ -93,7 +93,7 @@ const AdminPanel = () => {
       // Get selected agency
       const selectedAgency = agencies.find(a => a.id === parseInt(formData.agencyId));
 
-      // Create new package object
+      // Create new package object - agencies should be just the ID as a string
       const newPackage = {
         name: formData.name,
         destination: formData.destination,
@@ -104,22 +104,15 @@ const AdminPanel = () => {
         image: formData.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image',
         description: formData.description,
         rating: 5,
-        agencies: {
-          id: selectedAgency.id,
-          name: selectedAgency.name,
-          email: selectedAgency.email,
-          phone: selectedAgency.phone,
-          address: selectedAgency.address,
-        },
+        agencies: selectedAgency.id.toString(), // Send only the ID as string
       };
 
       // Send to backend
       const apiUrl = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
       if (editingId) {
-        // Update existing package
-        newPackage.id = editingId;
-        await axios.post(`${apiUrl}/packages`, newPackage);
-        setPackages(packages.map(pkg => pkg.id === editingId ? { ...newPackage, id: editingId } : pkg));
+        // Update existing package - Use PUT instead of POST
+        const response = await axios.put(`${apiUrl}/packages/${editingId}`, newPackage);
+        setPackages(packages.map(pkg => pkg.id === editingId ? response.data : pkg));
         setMessage('✅ Package updated successfully!');
         setEditingId(null);
       } else {
@@ -162,7 +155,7 @@ const AdminPanel = () => {
       departureDate: pkg.departureDate,
       imageUrl: pkg.image,
       description: pkg.description,
-      agencyId: pkg.agencies?.id || '',
+      agencyId: pkg.agencies || '', // agencies is now just an ID string
     });
     setShowAddForm(true);
   };
@@ -262,6 +255,12 @@ const AdminPanel = () => {
 
   const formatCurrency = (amount) => {
     return `Rp${amount?.toLocaleString('id-ID') || '0'}`;
+  };
+
+  const getAgencyName = (agencyId) => {
+    if (!agencyId) return 'Belum ditentukan';
+    const agency = agencies.find(a => a.id === parseInt(agencyId));
+    return agency?.name || 'Belum ditentukan';
   };
 
   return (
@@ -562,7 +561,7 @@ const AdminPanel = () => {
                     </p>
 
                     <p style={styles.packageInfo}>
-                      <strong>🏢 Agency:</strong> {pkg.agencies?.name || 'Belum ditentukan'}
+                      <strong>🏢 Agency:</strong> {getAgencyName(pkg.agencies)}
                     </p>
 
                     <div style={{ display: 'flex', gap: '8px' }}>
@@ -682,8 +681,7 @@ const styles = {
     marginBottom: '20px',
     borderRadius: '4px',
     textAlign: 'center',
-    fontWeight: 'bold',
-    border: '1px solid',
+    fontWeight: '600',
   },
   mainContainer: {
     display: 'grid',
@@ -694,12 +692,12 @@ const styles = {
     backgroundColor: 'white',
     padding: '24px',
     borderRadius: '8px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
   },
   formTitle: {
     fontSize: '20px',
-    fontWeight: 'bold',
-    marginBottom: '24px',
+    fontWeight: '600',
+    marginBottom: '20px',
     color: '#333',
   },
   form: {
@@ -710,7 +708,7 @@ const styles = {
   formGroup: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '6px',
+    gap: '8px',
   },
   label: {
     fontSize: '14px',
@@ -718,79 +716,75 @@ const styles = {
     color: '#333',
   },
   input: {
-    padding: '12px',
+    padding: '10px 12px',
     border: '1px solid #ddd',
     borderRadius: '4px',
     fontSize: '14px',
     fontFamily: 'inherit',
     transition: 'border-color 0.2s',
+    boxSizing: 'border-box',
   },
   submitBtn: {
-    padding: '14px',
-    backgroundColor: '#28a745',
+    padding: '12px 24px',
+    backgroundColor: '#007bff',
     color: 'white',
     border: 'none',
     borderRadius: '4px',
-    fontSize: '16px',
-    fontWeight: 'bold',
+    fontSize: '14px',
+    fontWeight: '600',
     cursor: 'pointer',
-    marginTop: '10px',
-    transition: 'background-color 0.3s',
+    transition: 'background-color 0.2s',
   },
   packagesSection: {
     backgroundColor: 'white',
     padding: '24px',
     borderRadius: '8px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
   },
   packagesTitle: {
     fontSize: '20px',
-    fontWeight: 'bold',
-    marginBottom: '24px',
+    fontWeight: '600',
+    marginBottom: '20px',
     color: '#333',
   },
   packagesList: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '16px',
-    maxHeight: '700px',
-    overflowY: 'auto',
-  },
-  packageCard: {
-    padding: '16px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    backgroundColor: '#f9f9f9',
-  },
-  packageName: {
-    margin: '0 0 12px 0',
-    fontSize: '16px',
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  packageInfo: {
-    margin: '6px 0',
-    fontSize: '14px',
-    color: '#666',
+    gap: '12px',
   },
   emptyMessage: {
-    textAlign: 'center',
     color: '#999',
+    textAlign: 'center',
     padding: '20px',
     fontSize: '14px',
   },
+  packageCard: {
+    backgroundColor: '#f9f9f9',
+    padding: '16px',
+    borderRadius: '6px',
+    borderLeft: '4px solid #007bff',
+  },
+  packageName: {
+    fontSize: '16px',
+    fontWeight: '600',
+    marginBottom: '12px',
+    color: '#333',
+  },
+  packageInfo: {
+    fontSize: '13px',
+    color: '#666',
+    margin: '6px 0',
+  },
   deleteBtn: {
-    width: '100%',
-    padding: '10px',
-    marginTop: '12px',
+    padding: '8px 16px',
     backgroundColor: '#dc3545',
     color: 'white',
     border: 'none',
     borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '14px',
+    fontSize: '13px',
     fontWeight: '600',
-    transition: 'background-color 0.3s',
+    cursor: 'pointer',
+    transition: 'background-color 0.2s',
   },
 };
 
