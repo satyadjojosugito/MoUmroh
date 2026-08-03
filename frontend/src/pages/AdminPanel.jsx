@@ -92,13 +92,13 @@ const AdminPanel = () => {
       }
 
       // Get selected agency - with better error handling
-      const agencyIdToFind = parseInt(formData.agencyId);
+      const agencyIdToFind = formData.agencyId;
       console.log('Looking for agency ID:', agencyIdToFind);
       console.log('Available agencies:', agencies);
 
       const selectedAgency = agencies.find(a => {
-        console.log('Comparing:', a.id, 'with', agencyIdToFind);
-        return a.id === agencyIdToFind;
+        console.log('Comparing:', a.id, 'with', agencyIdToFind, 'as strings:', a.id.toString(), agencyIdToFind.toString());
+        return a.id.toString() === agencyIdToFind.toString();
       });
 
       if (!selectedAgency) {
@@ -281,7 +281,7 @@ const AdminPanel = () => {
 
   const getAgencyName = (agencyId) => {
     if (!agencyId) return 'Belum ditentukan';
-    const agency = agencies.find(a => a.id === parseInt(agencyId));
+    const agency = agencies.find(a => a.id.toString() === agencyId.toString());
     return agency?.name || 'Belum ditentukan';
   };
 
