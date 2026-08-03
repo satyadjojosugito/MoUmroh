@@ -11,7 +11,8 @@
     "@supabase/supabase-js": "^2.38.4",
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",
-    "express": "^4.22.2"
+    "express": "^4.22.2",
+    "mongoose": "^9.9.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

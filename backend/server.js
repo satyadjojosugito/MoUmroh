@@ -1,87 +1,121 @@
 const express = require('express');
 const cors = require('cors');
+const mongoose = require('mongoose');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// MongoDB Connection
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://satyadjojosugito_db_user:oJqYx0E6C58iI8ve@cluster0.ww85n6s.mongodb.net/moumroh?appName=Cluster0';
+
+mongoose.connect(MONGODB_URI)
+  .then(() => {
+    console.log('✅ Connected to MongoDB');
+  })
+  .catch(err => {
+    console.error('❌ MongoDB connection error:', err.message);
+  });
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Import packages and agencies data
-const packages = require('./data/packages');
-const agencies = require('./data/agencies');
+// ===== SCHEMAS =====
 
-// Routes
+// Package Schema
+const packageSchema = new mongoose.Schema({
+  name: String,
+  destination: String,
+  price: Number,
+  duration: Number,
+  departureCity: String,
+  departureDate: String,
+  rating: { type: Number, default: 5 },
+  image: String,
+  description: String,
+  agencies: String,
+  inclusions: [String],
+  itinerary: [String],
+}, { timestamps: true });
+
+// Agency Schema
+const agencySchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  phone: String,
+  address: String,
+}, { timestamps: true });
+
+// Models
+const Package = mongoose.model('Package', packageSchema);
+const Agency = mongoose.model('Agency', agencySchema);
+
+// ===== PACKAGE ENDPOINTS =====
 
 // Get all packages
-app.get('/api/packages', (req, res) => {
+app.get('/api/packages', async (req, res) => {
   try {
-    // Optional: Add search/filter functionality
     const { search, minPrice, maxPrice, days, departureCity, departureMonth, departureYear } = req.query;
 
-    let filtered = [...packages];
+    let query = {};
 
-    // Search by name
+    // Search by name or description
     if (search) {
-      filtered = filtered.filter(pkg =>
-        pkg.name.toLowerCase().includes(search.toLowerCase()) ||
-        pkg.description.toLowerCase().includes(search.toLowerCase())
-      );
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
     }
 
     // Filter by price range
-    if (minPrice) {
-      filtered = filtered.filter(pkg => pkg.price >= parseInt(minPrice));
-    }
-    if (maxPrice) {
-      filtered = filtered.filter(pkg => pkg.price <= parseInt(maxPrice));
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = parseInt(minPrice);
+      if (maxPrice) query.price.$lte = parseInt(maxPrice);
     }
 
     // Filter by duration
     if (days) {
       const [min, max] = days.split('-').map(d => parseInt(d));
-      filtered = filtered.filter(pkg => {
-        if (max) return pkg.duration >= min && pkg.duration <= max;
-        return pkg.duration === min;
-      });
+      if (max) {
+        query.duration = { $gte: min, $lte: max };
+      } else {
+        query.duration = min;
+      }
     }
 
     // Filter by departure city
     if (departureCity) {
-      filtered = filtered.filter(pkg => pkg.departureCity === departureCity);
+      query.departureCity = departureCity;
     }
 
     // Filter by departure month and year
     if (departureMonth || departureYear) {
-      filtered = filtered.filter(pkg => {
-        if (!pkg.departureDate) return false;
-        const date = new Date(pkg.departureDate);
-        const month = (date.getMonth() + 1).toString();
-        const year = date.getFullYear().toString();
-
-        if (departureMonth && departureYear) {
-          return month === departureMonth && year === departureYear;
-        } else if (departureMonth) {
-          return month === departureMonth;
-        } else if (departureYear) {
-          return year === departureYear;
-        }
-        return true;
-      });
+      const dateRegex = [];
+      if (departureYear && departureMonth) {
+        dateRegex.push(new RegExp(`^${departureYear}-${String(departureMonth).padStart(2, '0')}`));
+      } else if (departureYear) {
+        dateRegex.push(new RegExp(`^${departureYear}`));
+      } else if (departureMonth) {
+        dateRegex.push(new RegExp(`-${String(departureMonth).padStart(2, '0')}-`));
+      }
+      if (dateRegex.length > 0) {
+        query.departureDate = { $regex: dateRegex[0] };
+      }
     }
 
-    res.json(filtered);
+    const packages = await Package.find(query);
+    res.json(packages);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 // Get single package by ID
-app.get('/api/packages/:id', (req, res) => {
+app.get('/api/packages/:id', async (req, res) => {
   try {
-    const package_ = packages.find(p => p.id === parseInt(req.params.id));
+    const package_ = await Package.findById(req.params.id);
 
     if (!package_) {
       return res.status(404).json({ error: 'Package not found' });
@@ -94,7 +128,7 @@ app.get('/api/packages/:id', (req, res) => {
 });
 
 // Add new package
-app.post('/api/packages', (req, res) => {
+app.post('/api/packages', async (req, res) => {
   try {
     const { name, destination, price, duration, departureCity, departureDate, rating, image, description, agencies } = req.body;
 
@@ -103,9 +137,7 @@ app.post('/api/packages', (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Create new package
-    const newPackage = {
-      id: Math.max(...packages.map(p => p.id), 0) + 1,
+    const newPackage = new Package({
       name,
       destination,
       price: parseInt(price),
@@ -118,93 +150,90 @@ app.post('/api/packages', (req, res) => {
       agencies: agencies || null,
       inclusions: [],
       itinerary: [],
-    };
+    });
 
-    packages.push(newPackage);
-    res.status(201).json(newPackage);
+    const savedPackage = await newPackage.save();
+    res.status(201).json(savedPackage);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 // Update existing package
-app.put('/api/packages/:id', (req, res) => {
+app.put('/api/packages/:id', async (req, res) => {
   try {
     const { name, destination, price, duration, departureCity, departureDate, rating, image, description, agencies } = req.body;
-    const packageIndex = packages.findIndex(p => p.id === parseInt(req.params.id));
-
-    if (packageIndex === -1) {
-      return res.status(404).json({ error: 'Package not found' });
-    }
 
     // Validate required fields
     if (!name || !destination || !price || !duration || !departureCity || !departureDate) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Update package
-    const updatedPackage = {
-      ...packages[packageIndex],
-      name,
-      destination,
-      price: parseInt(price),
-      duration: parseInt(duration),
-      departureCity,
-      departureDate,
-      rating: parseInt(rating) || 5,
-      image: image || 'https://via.placeholder.com/400x300?text=No+Image',
-      description: description || '',
-      agencies: agencies || null,
-    };
+    const updatedPackage = await Package.findByIdAndUpdate(
+      req.params.id,
+      {
+        name,
+        destination,
+        price: parseInt(price),
+        duration: parseInt(duration),
+        departureCity,
+        departureDate,
+        rating: parseInt(rating) || 5,
+        image: image || 'https://via.placeholder.com/400x300?text=No+Image',
+        description: description || '',
+        agencies: agencies || null,
+      },
+      { new: true }
+    );
 
-    packages[packageIndex] = updatedPackage;
+    if (!updatedPackage) {
+      return res.status(404).json({ error: 'Package not found' });
+    }
+
     res.json(updatedPackage);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Search endpoint
-app.post('/api/packages/search', (req, res) => {
+// Delete package
+app.delete('/api/packages/:id', async (req, res) => {
   try {
-    const { name, minPrice, maxPrice, duration } = req.body;
+    const deletedPackage = await Package.findByIdAndDelete(req.params.id);
 
-    let filtered = [...packages];
-
-    if (name) {
-      filtered = filtered.filter(pkg =>
-        pkg.name.toLowerCase().includes(name.toLowerCase())
-      );
+    if (!deletedPackage) {
+      return res.status(404).json({ error: 'Package not found' });
     }
 
-    if (minPrice) {
-      filtered = filtered.filter(pkg => pkg.price >= minPrice);
-    }
-
-    if (maxPrice) {
-      filtered = filtered.filter(pkg => pkg.price <= maxPrice);
-    }
-
-    if (duration) {
-      filtered = filtered.filter(pkg => pkg.duration === duration);
-    }
-
-    res.json(filtered);
+    res.json({ message: 'Package deleted', package: deletedPackage });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-app.delete('/api/packages/:id', (req, res) => {
+// Search endpoint
+app.post('/api/packages/search', async (req, res) => {
   try {
-    const index = packages.findIndex(p => p.id === parseInt(req.params.id));
+    const { name, minPrice, maxPrice, duration } = req.body;
 
-    if (index === -1) {
-      return res.status(404).json({ error: 'Package not found' });
+    let query = {};
+
+    if (name) {
+      query.name = { $regex: name, $options: 'i' };
     }
 
-    const deletedPackage = packages.splice(index, 1);
-    res.json({ message: 'Package deleted', package: deletedPackage[0] });
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = minPrice;
+      if (maxPrice) query.price.$lte = maxPrice;
+    }
+
+    if (duration) {
+      query.duration = duration;
+    }
+
+    const packages = await Package.find(query);
+    res.json(packages);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -213,8 +242,9 @@ app.delete('/api/packages/:id', (req, res) => {
 // ===== AGENCY ENDPOINTS =====
 
 // Get all agencies
-app.get('/api/agencies', (req, res) => {
+app.get('/api/agencies', async (req, res) => {
   try {
+    const agencies = await Agency.find();
     res.json(agencies);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -222,9 +252,9 @@ app.get('/api/agencies', (req, res) => {
 });
 
 // Get single agency by ID
-app.get('/api/agencies/:id', (req, res) => {
+app.get('/api/agencies/:id', async (req, res) => {
   try {
-    const agency = agencies.find(a => a.id === parseInt(req.params.id));
+    const agency = await Agency.findById(req.params.id);
 
     if (!agency) {
       return res.status(404).json({ error: 'Agency not found' });
@@ -237,7 +267,7 @@ app.get('/api/agencies/:id', (req, res) => {
 });
 
 // Add new agency
-app.post('/api/agencies', (req, res) => {
+app.post('/api/agencies', async (req, res) => {
   try {
     const { name, email, phone, address } = req.body;
 
@@ -246,47 +276,45 @@ app.post('/api/agencies', (req, res) => {
       return res.status(400).json({ error: 'Missing required fields: name, email, phone' });
     }
 
-    // Create new agency
-    const newAgency = {
-      id: Math.max(...agencies.map(a => a.id), 0) + 1,
+    const newAgency = new Agency({
       name,
       email,
       phone,
       address: address || ''
-    };
+    });
 
-    agencies.push(newAgency);
-    res.status(201).json(newAgency);
+    const savedAgency = await newAgency.save();
+    res.status(201).json(savedAgency);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 // Update existing agency
-app.put('/api/agencies/:id', (req, res) => {
+app.put('/api/agencies/:id', async (req, res) => {
   try {
     const { name, email, phone, address } = req.body;
-    const agencyIndex = agencies.findIndex(a => a.id === parseInt(req.params.id));
-
-    if (agencyIndex === -1) {
-      return res.status(404).json({ error: 'Agency not found' });
-    }
 
     // Validate required fields
     if (!name || !email || !phone) {
       return res.status(400).json({ error: 'Missing required fields: name, email, phone' });
     }
 
-    // Update agency
-    const updatedAgency = {
-      ...agencies[agencyIndex],
-      name,
-      email,
-      phone,
-      address: address || ''
-    };
+    const updatedAgency = await Agency.findByIdAndUpdate(
+      req.params.id,
+      {
+        name,
+        email,
+        phone,
+        address: address || ''
+      },
+      { new: true }
+    );
 
-    agencies[agencyIndex] = updatedAgency;
+    if (!updatedAgency) {
+      return res.status(404).json({ error: 'Agency not found' });
+    }
+
     res.json(updatedAgency);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -294,16 +322,15 @@ app.put('/api/agencies/:id', (req, res) => {
 });
 
 // Delete agency
-app.delete('/api/agencies/:id', (req, res) => {
+app.delete('/api/agencies/:id', async (req, res) => {
   try {
-    const index = agencies.findIndex(a => a.id === parseInt(req.params.id));
+    const deletedAgency = await Agency.findByIdAndDelete(req.params.id);
 
-    if (index === -1) {
+    if (!deletedAgency) {
       return res.status(404).json({ error: 'Agency not found' });
     }
 
-    const deletedAgency = agencies.splice(index, 1);
-    res.json({ message: 'Agency deleted', agency: deletedAgency[0] });
+    res.json({ message: 'Agency deleted', agency: deletedAgency });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
