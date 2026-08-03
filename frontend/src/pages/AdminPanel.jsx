@@ -47,6 +47,7 @@ const AdminPanel = () => {
       const apiUrl = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
       const response = await axios.get(`${apiUrl}/agencies`);
       setAgencies(response.data);
+      console.log('Agencies loaded:', response.data);
     } catch (error) {
       console.error('Error fetching agencies:', error);
       setAgencies([]);
@@ -90,8 +91,23 @@ const AdminPanel = () => {
         return;
       }
 
-      // Get selected agency
-      const selectedAgency = agencies.find(a => a.id === parseInt(formData.agencyId));
+      // Get selected agency - with better error handling
+      const agencyIdToFind = parseInt(formData.agencyId);
+      console.log('Looking for agency ID:', agencyIdToFind);
+      console.log('Available agencies:', agencies);
+
+      const selectedAgency = agencies.find(a => {
+        console.log('Comparing:', a.id, 'with', agencyIdToFind);
+        return a.id === agencyIdToFind;
+      });
+
+      if (!selectedAgency) {
+        setMessage('❌ Selected agency not found. Please select a valid agency.');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Selected agency:', selectedAgency);
 
       // Create new package object - agencies should be just the ID as a string
       const newPackage = {
@@ -104,20 +120,25 @@ const AdminPanel = () => {
         image: formData.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image',
         description: formData.description,
         rating: 5,
-        agencies: selectedAgency.id.toString(), // Send only the ID as string
+        agencies: selectedAgency.id.toString(), // IMPORTANT: Send only ID as string
       };
+
+      console.log('Package to send:', newPackage);
 
       // Send to backend
       const apiUrl = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
       if (editingId) {
-        // Update existing package - Use PUT instead of POST
+        // Update existing package - Use PUT
+        console.log('Updating package:', editingId);
         const response = await axios.put(`${apiUrl}/packages/${editingId}`, newPackage);
         setPackages(packages.map(pkg => pkg.id === editingId ? response.data : pkg));
         setMessage('✅ Package updated successfully!');
         setEditingId(null);
       } else {
         // Add new package
+        console.log('Creating new package');
         const response = await axios.post(`${apiUrl}/packages`, newPackage);
+        console.log('Response from server:', response.data);
         setPackages([...packages, response.data]);
         setMessage('✅ Package added successfully!');
       }
@@ -137,8 +158,9 @@ const AdminPanel = () => {
 
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
-      setMessage('❌ Error saving package');
-      console.error('Error:', error);
+      console.error('Full error:', error);
+      console.error('Error response:', error.response?.data);
+      setMessage(`❌ Error: ${error.response?.data?.error || error.message || 'Error saving package'}`);
     } finally {
       setLoading(false);
     }
@@ -155,7 +177,7 @@ const AdminPanel = () => {
       departureDate: pkg.departureDate,
       imageUrl: pkg.image,
       description: pkg.description,
-      agencyId: pkg.agencies || '', // agencies is now just an ID string
+      agencyId: pkg.agencies || '',
     });
     setShowAddForm(true);
   };
