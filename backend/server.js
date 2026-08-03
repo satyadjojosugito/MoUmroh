@@ -21,6 +21,19 @@ mongoose.connect(MONGODB_URI)
 app.use(cors());
 app.use(express.json());
 
+// Helper function to transform MongoDB _id to id
+const transformDoc = (doc) => {
+  if (!doc) return doc;
+  if (Array.isArray(doc)) return doc.map(transformDoc);
+  
+  const obj = doc.toObject ? doc.toObject() : { ...doc };
+  if (obj._id) {
+    obj.id = obj._id.toString();
+    delete obj._id;
+  }
+  return obj;
+};
+
 // ===== SCHEMAS =====
 
 // Package Schema
@@ -106,7 +119,7 @@ app.get('/api/packages', async (req, res) => {
     }
 
     const packages = await Package.find(query);
-    res.json(packages);
+    res.json(packages.map(transformDoc));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -121,7 +134,7 @@ app.get('/api/packages/:id', async (req, res) => {
       return res.status(404).json({ error: 'Package not found' });
     }
 
-    res.json(package_);
+    res.json(transformDoc(package_));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -153,7 +166,7 @@ app.post('/api/packages', async (req, res) => {
     });
 
     const savedPackage = await newPackage.save();
-    res.status(201).json(savedPackage);
+    res.status(201).json(transformDoc(savedPackage));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -190,7 +203,7 @@ app.put('/api/packages/:id', async (req, res) => {
       return res.status(404).json({ error: 'Package not found' });
     }
 
-    res.json(updatedPackage);
+    res.json(transformDoc(updatedPackage));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -205,7 +218,7 @@ app.delete('/api/packages/:id', async (req, res) => {
       return res.status(404).json({ error: 'Package not found' });
     }
 
-    res.json({ message: 'Package deleted', package: deletedPackage });
+    res.json({ message: 'Package deleted', package: transformDoc(deletedPackage) });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -233,7 +246,7 @@ app.post('/api/packages/search', async (req, res) => {
     }
 
     const packages = await Package.find(query);
-    res.json(packages);
+    res.json(packages.map(transformDoc));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -245,7 +258,7 @@ app.post('/api/packages/search', async (req, res) => {
 app.get('/api/agencies', async (req, res) => {
   try {
     const agencies = await Agency.find();
-    res.json(agencies);
+    res.json(agencies.map(transformDoc));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -260,7 +273,7 @@ app.get('/api/agencies/:id', async (req, res) => {
       return res.status(404).json({ error: 'Agency not found' });
     }
 
-    res.json(agency);
+    res.json(transformDoc(agency));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -284,7 +297,7 @@ app.post('/api/agencies', async (req, res) => {
     });
 
     const savedAgency = await newAgency.save();
-    res.status(201).json(savedAgency);
+    res.status(201).json(transformDoc(savedAgency));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -315,7 +328,7 @@ app.put('/api/agencies/:id', async (req, res) => {
       return res.status(404).json({ error: 'Agency not found' });
     }
 
-    res.json(updatedAgency);
+    res.json(transformDoc(updatedAgency));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -330,7 +343,7 @@ app.delete('/api/agencies/:id', async (req, res) => {
       return res.status(404).json({ error: 'Agency not found' });
     }
 
-    res.json({ message: 'Agency deleted', agency: deletedAgency });
+    res.json({ message: 'Agency deleted', agency: transformDoc(deletedAgency) });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
