@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'https://otwbcjjidiawkprxvrfo.supabase.co/functions/v1';
+const API_URL = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -16,7 +16,7 @@ export default function Home() {
 
   const fetchPackages = async () => {
     try {
-      const response = await axios.get(`${API_URL}/get-packages`);
+      const response = await axios.get(`${API_URL}/packages`);
       setPackages(response.data.slice(0, 6)); // Show top 6
       setLoading(false);
     } catch (error) {
