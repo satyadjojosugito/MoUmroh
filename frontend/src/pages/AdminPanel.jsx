@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
- 
+
 const AdminPanel = () => {
   const [packages, setPackages] = useState([]);
   const [agencies, setAgencies] = useState([]);
@@ -25,32 +25,34 @@ const AdminPanel = () => {
   const [message, setMessage] = useState('');
   const [showAddForm, setShowAddForm] = useState(true);
   const [editingId, setEditingId] = useState(null);
- 
+
   // Fetch packages on mount
   useEffect(() => {
     fetchPackages();
     fetchAgencies();
   }, []);
- 
+
   const fetchPackages = async () => {
     try {
-      const response = await axios.get('https://otwbcjjidiawkprxvrfo.supabase.co/functions/v1/get-packages');
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
+      const response = await axios.get(`${apiUrl}/packages`);
       setPackages(response.data);
     } catch (error) {
       console.error('Error fetching packages:', error);
     }
   };
- 
+
   const fetchAgencies = async () => {
     try {
-      const response = await axios.get('https://otwbcjjidiawkprxvrfo.supabase.co/functions/v1/get-agencies');
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
+      const response = await axios.get(`${apiUrl}/agencies`);
       setAgencies(response.data);
     } catch (error) {
       console.error('Error fetching agencies:', error);
       setAgencies([]);
     }
   };
- 
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -58,7 +60,7 @@ const AdminPanel = () => {
       [name]: value,
     });
   };
- 
+
   const handleAgencyInputChange = (e) => {
     const { name, value } = e.target;
     setAgencyFormData({
@@ -66,12 +68,12 @@ const AdminPanel = () => {
       [name]: value,
     });
   };
- 
+
   const handleAddPackage = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
- 
+
     try {
       // Validate required fields
       if (
@@ -87,10 +89,10 @@ const AdminPanel = () => {
         setLoading(false);
         return;
       }
- 
+
       // Get selected agency
       const selectedAgency = agencies.find(a => a.id === parseInt(formData.agencyId));
- 
+
       // Create new package object
       const newPackage = {
         name: formData.name,
@@ -110,22 +112,23 @@ const AdminPanel = () => {
           address: selectedAgency.address,
         },
       };
- 
+
       // Send to backend
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
       if (editingId) {
         // Update existing package
         newPackage.id = editingId;
-        await axios.post(`https://otwbcjjidiawkprxvrfo.supabase.co/functions/v1/create-package`, newPackage);
+        await axios.post(`${apiUrl}/packages`, newPackage);
         setPackages(packages.map(pkg => pkg.id === editingId ? { ...newPackage, id: editingId } : pkg));
         setMessage('✅ Package updated successfully!');
         setEditingId(null);
       } else {
         // Add new package
-        const response = await axios.post('https://otwbcjjidiawkprxvrfo.supabase.co/functions/v1/create-package', newPackage);
+        const response = await axios.post(`${apiUrl}/packages`, newPackage);
         setPackages([...packages, response.data]);
         setMessage('✅ Package added successfully!');
       }
- 
+
       // Clear form
       setFormData({
         name: '',
@@ -138,7 +141,7 @@ const AdminPanel = () => {
         description: '',
         agencyId: '',
       });
- 
+
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
       setMessage('❌ Error saving package');
@@ -147,7 +150,7 @@ const AdminPanel = () => {
       setLoading(false);
     }
   };
- 
+
   const handleEditPackage = (pkg) => {
     setEditingId(pkg.id);
     setFormData({
@@ -163,7 +166,7 @@ const AdminPanel = () => {
     });
     setShowAddForm(true);
   };
- 
+
   const handleCancelEdit = () => {
     setEditingId(null);
     setFormData({
@@ -178,7 +181,7 @@ const AdminPanel = () => {
       agencyId: '',
     });
   };
- 
+
   const handleAddAgency = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -198,7 +201,8 @@ const AdminPanel = () => {
         address: agencyFormData.address,
       };
 
-      await axios.post('https://otwbcjjidiawkprxvrfo.supabase.co/functions/v1/create-agency', newAgency);
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
+      await axios.post(`${apiUrl}/agencies`, newAgency);
 
       // Refresh agencies list
       await fetchAgencies();
@@ -219,25 +223,27 @@ const AdminPanel = () => {
       setLoading(false);
     }
   };
- 
+
   const handleDeletePackage = async (id) => {
-  if (window.confirm('Are you sure you want to delete this package?')) {
-    try {
-      await axios.delete(`https://otwbcjjidiawkprxvrfo.supabase.co/functions/v1/delete-package/${id}`);
-      setPackages(packages.filter(pkg => pkg.id !== id));
-      setMessage('✅ Package deleted successfully!');
-      setTimeout(() => setMessage(''), 3000);
-    } catch (error) {
-      setMessage('❌ Error deleting package');
-      console.error('Error:', error);
+    if (window.confirm('Are you sure you want to delete this package?')) {
+      try {
+        const apiUrl = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
+        await axios.delete(`${apiUrl}/packages/${id}`);
+        setPackages(packages.filter(pkg => pkg.id !== id));
+        setMessage('✅ Package deleted successfully!');
+        setTimeout(() => setMessage(''), 3000);
+      } catch (error) {
+        setMessage('❌ Error deleting package');
+        console.error('Error:', error);
+      }
     }
-  }
-};
- 
+  };
+
   const handleDeleteAgency = async (id) => {
     if (window.confirm('Are you sure you want to delete this agency?')) {
       try {
-        await axios.delete(`https://otwbcjjidiawkprxvrfo.supabase.co/functions/v1/delete-agency/${id}`);
+        const apiUrl = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
+        await axios.delete(`${apiUrl}/agencies/${id}`);
         setAgencies(agencies.filter(agency => agency.id !== id));
         setMessage('✅ Agency deleted successfully!');
         setTimeout(() => setMessage(''), 3000);
@@ -247,17 +253,17 @@ const AdminPanel = () => {
       }
     }
   };
- 
+
   const formatDateMonthYear = (dateString) => {
     if (!dateString) return '';
     const options = { year: 'numeric', month: 'long' };
     return new Date(dateString).toLocaleDateString('en-US', options);
   };
- 
+
   const formatCurrency = (amount) => {
     return `Rp${amount?.toLocaleString('id-ID') || '0'}`;
   };
- 
+
   return (
     <div style={styles.container}>
       {/* Header */}
@@ -278,7 +284,7 @@ const AdminPanel = () => {
           </button>
         </div>
       </div>
- 
+
       {/* Message */}
       {message && (
         <div style={{
@@ -290,7 +296,7 @@ const AdminPanel = () => {
           {message}
         </div>
       )}
- 
+
       {/* Main Container */}
       <div style={styles.mainContainer}>
         {/* Left Column - Add Package Form */}
@@ -309,7 +315,7 @@ const AdminPanel = () => {
                 Cancel Edit
               </button>
             )}
- 
+
             <form onSubmit={handleAddPackage} style={styles.form}>
               {/* Agency Selection */}
               <div style={styles.formGroup}>
@@ -329,7 +335,7 @@ const AdminPanel = () => {
                   ))}
                 </select>
               </div>
- 
+
               {/* Package Name */}
               <div style={styles.formGroup}>
                 <label style={styles.label}>Package Name *</label>
@@ -343,7 +349,7 @@ const AdminPanel = () => {
                   required
                 />
               </div>
- 
+
               {/* Destination */}
               <div style={styles.formGroup}>
                 <label style={styles.label}>Destination *</label>
@@ -357,7 +363,7 @@ const AdminPanel = () => {
                   required
                 />
               </div>
- 
+
               {/* Price */}
               <div style={styles.formGroup}>
                 <label style={styles.label}>Price (IDR) *</label>
@@ -373,7 +379,7 @@ const AdminPanel = () => {
                   required
                 />
               </div>
- 
+
               {/* Duration */}
               <div style={styles.formGroup}>
                 <label style={styles.label}>Duration (Days) *</label>
@@ -387,7 +393,7 @@ const AdminPanel = () => {
                   required
                 />
               </div>
- 
+
               {/* Departure City */}
               <div style={styles.formGroup}>
                 <label style={styles.label}>Departure City *</label>
@@ -401,7 +407,7 @@ const AdminPanel = () => {
                   required
                 />
               </div>
- 
+
               {/* Departure Date */}
               <div style={styles.formGroup}>
                 <label style={styles.label}>Departure Date *</label>
@@ -414,7 +420,7 @@ const AdminPanel = () => {
                   required
                 />
               </div>
- 
+
               {/* Image URL */}
               <div style={styles.formGroup}>
                 <label style={styles.label}>Image URL</label>
@@ -427,7 +433,7 @@ const AdminPanel = () => {
                   style={styles.input}
                 />
               </div>
- 
+
               {/* Description */}
               <div style={styles.formGroup}>
                 <label style={styles.label}>Description</label>
@@ -440,7 +446,7 @@ const AdminPanel = () => {
                   rows="4"
                 />
               </div>
- 
+
               {/* Submit Button */}
               <button
                 type="submit"
@@ -452,12 +458,12 @@ const AdminPanel = () => {
             </form>
           </div>
         )}
- 
+
         {/* Left Column - Add Agency Form */}
         {!showAddForm && (
           <div style={styles.formSection}>
             <h2 style={styles.formTitle}>Add New Agency</h2>
- 
+
             <form onSubmit={handleAddAgency} style={styles.form}>
               {/* Agency Name */}
               <div style={styles.formGroup}>
@@ -472,7 +478,7 @@ const AdminPanel = () => {
                   required
                 />
               </div>
- 
+
               {/* Email */}
               <div style={styles.formGroup}>
                 <label style={styles.label}>Email *</label>
@@ -486,7 +492,7 @@ const AdminPanel = () => {
                   required
                 />
               </div>
- 
+
               {/* Phone */}
               <div style={styles.formGroup}>
                 <label style={styles.label}>Phone *</label>
@@ -500,7 +506,7 @@ const AdminPanel = () => {
                   required
                 />
               </div>
- 
+
               {/* Address */}
               <div style={styles.formGroup}>
                 <label style={styles.label}>Address</label>
@@ -513,7 +519,7 @@ const AdminPanel = () => {
                   rows="3"
                 />
               </div>
- 
+
               {/* Submit Button */}
               <button
                 type="submit"
@@ -525,12 +531,12 @@ const AdminPanel = () => {
             </form>
           </div>
         )}
- 
+
         {/* Right Column - Current Packages */}
         {showAddForm && (
           <div style={styles.packagesSection}>
             <h2 style={styles.packagesTitle}>Current Packages ({packages.length})</h2>
- 
+
             <div style={styles.packagesList}>
               {packages.length === 0 ? (
                 <p style={styles.emptyMessage}>No packages yet. Add one to get started!</p>
@@ -538,27 +544,27 @@ const AdminPanel = () => {
                 packages.map(pkg => (
                   <div key={pkg.id} style={styles.packageCard}>
                     <h3 style={styles.packageName}>{pkg.name}</h3>
- 
+
                     <p style={styles.packageInfo}>
                       <strong>Destination:</strong> {pkg.destination}
                     </p>
- 
+
                     <p style={styles.packageInfo}>
                       <strong>Price:</strong> {formatCurrency(pkg.price)} | <strong>Days:</strong> {pkg.duration}
                     </p>
- 
+
                     <p style={styles.packageInfo}>
                       <strong>📍 Departs:</strong> {pkg.departureCity}
                     </p>
- 
+
                     <p style={styles.packageInfo}>
                       <strong>📅 Date:</strong> {formatDateMonthYear(pkg.departureDate)}
                     </p>
- 
+
                     <p style={styles.packageInfo}>
                       <strong>🏢 Agency:</strong> {pkg.agencies?.name || 'Belum ditentukan'}
                     </p>
- 
+
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button
                         onClick={() => handleEditPackage(pkg)}
@@ -586,12 +592,12 @@ const AdminPanel = () => {
             </div>
           </div>
         )}
- 
+
         {/* Right Column - Current Agencies */}
         {!showAddForm && (
           <div style={styles.packagesSection}>
             <h2 style={styles.packagesTitle}>Current Agencies ({agencies.length})</h2>
- 
+
             <div style={styles.packagesList}>
               {agencies.length === 0 ? (
                 <p style={styles.emptyMessage}>No agencies yet. Add one to get started!</p>
@@ -599,21 +605,21 @@ const AdminPanel = () => {
                 agencies.map(agency => (
                   <div key={agency.id} style={styles.packageCard}>
                     <h3 style={styles.packageName}>{agency.name}</h3>
- 
+
                     <p style={styles.packageInfo}>
                       <strong>Email:</strong> {agency.email}
                     </p>
- 
+
                     <p style={styles.packageInfo}>
                       <strong>Phone:</strong> {agency.phone}
                     </p>
- 
+
                     {agency.address && (
                       <p style={styles.packageInfo}>
                         <strong>Address:</strong> {agency.address}
                       </p>
                     )}
- 
+
                     <button
                       onClick={() => handleDeleteAgency(agency.id)}
                       style={styles.deleteBtn}
@@ -630,7 +636,7 @@ const AdminPanel = () => {
     </div>
   );
 };
- 
+
 // Inline Styles
 const styles = {
   container: {
@@ -787,6 +793,5 @@ const styles = {
     transition: 'background-color 0.3s',
   },
 };
- 
+
 export default AdminPanel;
- 
