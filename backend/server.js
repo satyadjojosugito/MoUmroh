@@ -6,75 +6,23 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
  
-// MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://satyadjojosugito_db_user:oJqYx0E6C58iI8ve@cluster0.ww85n6s.mongodb.net/moumroh?appName=Cluster0';
+// MongoDB Connection - Simple and Direct
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://satyadjojosugito_db_user:MoUmroh2024Secure@cluster0.ww85n6s.mongodb.net/moumroh?appName=Cluster0';
  
-console.log('📡 MongoDB URI configured:', MONGODB_URI.substring(0, 50) + '...');
- 
-// Track connection status
-let mongoConnected = false;
- 
-// Connect to MongoDB with retry logic
-const connectToMongoDB = async () => {
-  if (mongoConnected) {
-    console.log('♻️  Reusing existing MongoDB connection');
-    return;
-  }
- 
-  try {
-    await mongoose.connect(MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 10000,
-      retryWrites: true,
-      w: 'majority',
-      maxPoolSize: 10,
-      minPoolSize: 2,
-    });
-    mongoConnected = true;
-    console.log('✅ Connected to MongoDB');
-    return true;
-  } catch (err) {
-    console.error('❌ MongoDB connection error:', err.message);
-    mongoConnected = false;
-    throw err;
-  }
-};
- 
-// Initial connection attempt (don't block server startup)
-connectToMongoDB().catch(err => {
-  console.error('⚠️  Initial MongoDB connection failed, will retry on requests:', err.message);
-});
+// Connect to MongoDB - Simple approach
+mongoose.connect(MONGODB_URI)
+  .then(() => console.log('✅ Connected to MongoDB'))
+  .catch(err => console.error('❌ MongoDB error:', err.message));
  
 // Middleware
 app.use(cors());
 app.use(express.json());
  
-// Middleware to ensure MongoDB connection before processing requests
-app.use(async (req, res, next) => {
-  if (mongoose.connection.readyState === 1) {
-    // Already connected
-    return next();
-  }
- 
-  try {
-    console.log('🔌 Attempting to connect to MongoDB for incoming request...');
-    await connectToMongoDB();
-    next();
-  } catch (error) {
-    console.error('❌ Failed to connect to MongoDB:', error.message);
-    res.status(503).json({
-      error: 'Database connection failed',
-      message: 'Please try again in a moment'
-    });
-  }
-});
- 
 // Helper function to transform MongoDB _id to id
 const transformDoc = (doc) => {
   if (!doc) return doc;
   if (Array.isArray(doc)) return doc.map(transformDoc);
-  
+ 
   const obj = doc.toObject ? doc.toObject() : { ...doc };
   if (obj._id) {
     obj.id = obj._id.toString();
@@ -119,10 +67,8 @@ const Agency = mongoose.model('Agency', agencySchema);
 app.get('/api/packages', async (req, res) => {
   try {
     const { search, minPrice, maxPrice, days, departureCity, departureMonth, departureYear } = req.query;
- 
     let query = {};
  
-    // Search by name or description
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -130,14 +76,12 @@ app.get('/api/packages', async (req, res) => {
       ];
     }
  
-    // Filter by price range
     if (minPrice || maxPrice) {
       query.price = {};
       if (minPrice) query.price.$gte = parseInt(minPrice);
       if (maxPrice) query.price.$lte = parseInt(maxPrice);
     }
  
-    // Filter by duration
     if (days) {
       const [min, max] = days.split('-').map(d => parseInt(d));
       if (max) {
@@ -147,12 +91,10 @@ app.get('/api/packages', async (req, res) => {
       }
     }
  
-    // Filter by departure city
     if (departureCity) {
       query.departureCity = departureCity;
     }
  
-    // Filter by departure month and year
     if (departureMonth || departureYear) {
       const dateRegex = [];
       if (departureYear && departureMonth) {
@@ -170,6 +112,7 @@ app.get('/api/packages', async (req, res) => {
     const packages = await Package.find(query);
     res.json(packages.map(transformDoc));
   } catch (error) {
+    console.error('Error fetching packages:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -178,11 +121,9 @@ app.get('/api/packages', async (req, res) => {
 app.get('/api/packages/:id', async (req, res) => {
   try {
     const package_ = await Package.findById(req.params.id);
- 
     if (!package_) {
       return res.status(404).json({ error: 'Package not found' });
     }
- 
     res.json(transformDoc(package_));
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -194,7 +135,6 @@ app.post('/api/packages', async (req, res) => {
   try {
     const { name, destination, price, duration, departureCity, departureDate, rating, image, description, agencies } = req.body;
  
-    // Validate required fields
     if (!name || !destination || !price || !duration || !departureCity || !departureDate) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
@@ -214,16 +154,11 @@ app.post('/api/packages', async (req, res) => {
       itinerary: [],
     });
  
-    console.log('💾 Saving package:', name);
     const savedPackage = await newPackage.save();
-    console.log('✅ Package saved successfully:', savedPackage._id);
     res.status(201).json(transformDoc(savedPackage));
   } catch (error) {
-    console.error('❌ Error saving package:', error.message, error.code);
-    res.status(500).json({
-      error: error.message,
-      code: error.code
-    });
+    console.error('Error saving package:', error.message);
+    res.status(500).json({ error: error.message });
   }
 });
  
@@ -232,7 +167,6 @@ app.put('/api/packages/:id', async (req, res) => {
   try {
     const { name, destination, price, duration, departureCity, departureDate, rating, image, description, agencies } = req.body;
  
-    // Validate required fields
     if (!name || !destination || !price || !duration || !departureCity || !departureDate) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
@@ -283,7 +217,6 @@ app.delete('/api/packages/:id', async (req, res) => {
 app.post('/api/packages/search', async (req, res) => {
   try {
     const { name, minPrice, maxPrice, duration } = req.body;
- 
     let query = {};
  
     if (name) {
@@ -339,7 +272,6 @@ app.post('/api/agencies', async (req, res) => {
   try {
     const { name, email, phone, address } = req.body;
  
-    // Validate required fields
     if (!name || !email || !phone) {
       return res.status(400).json({ error: 'Missing required fields: name, email, phone' });
     }
@@ -351,16 +283,11 @@ app.post('/api/agencies', async (req, res) => {
       address: address || ''
     });
  
-    console.log('💾 Saving agency:', name);
     const savedAgency = await newAgency.save();
-    console.log('✅ Agency saved successfully:', savedAgency._id);
     res.status(201).json(transformDoc(savedAgency));
   } catch (error) {
-    console.error('❌ Error saving agency:', error.message, error.code);
-    res.status(500).json({
-      error: error.message,
-      code: error.code
-    });
+    console.error('Error saving agency:', error.message);
+    res.status(500).json({ error: error.message });
   }
 });
  
@@ -369,7 +296,6 @@ app.put('/api/agencies/:id', async (req, res) => {
   try {
     const { name, email, phone, address } = req.body;
  
-    // Validate required fields
     if (!name || !email || !phone) {
       return res.status(400).json({ error: 'Missing required fields: name, email, phone' });
     }
@@ -430,6 +356,7 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`✅ Server is running on http://localhost:${PORT}`);
   console.log(`📦 Packages endpoint: http://localhost:${PORT}/api/packages`);
+  console.log(`💼 Agencies endpoint: http://localhost:${PORT}/api/agencies`);
   console.log(`💊 Health check: http://localhost:${PORT}/api/health`);
 });
  
