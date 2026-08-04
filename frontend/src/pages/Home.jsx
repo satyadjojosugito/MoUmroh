@@ -14,7 +14,7 @@ export default function Home() {
   const fetchPackages = async () => {
     try {
       const response = await axios.get(`${API_URL}/packages`);
-      setPackages(response.data.slice(0, 12)); // Show top 12
+      setPackages(response.data);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching packages:', error);
@@ -98,7 +98,7 @@ export default function Home() {
       </section>
       {/* Featured Packages */}
       <section style={{
-        maxWidth: '1200px',
+        maxWidth: '600px',
         margin: '60px auto',
         padding: '0 20px'
       }}>
@@ -106,14 +106,16 @@ export default function Home() {
           fontSize: '32px',
           fontWeight: '700',
           marginBottom: '8px',
-          color: '#000'
+          color: '#000',
+          textAlign: 'center'
         }}>
           Paket Unggulan
         </h2>
         <p style={{
           fontSize: '16px',
           color: '#666',
-          marginBottom: '40px'
+          marginBottom: '40px',
+          textAlign: 'center'
         }}>
           Koleksi paket umroh pilihan dengan harga terjangkau
         </p>
@@ -122,7 +124,7 @@ export default function Home() {
         ) : (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+            gridTemplateColumns: '1fr',
             gap: '16px'
           }}>
             {packages.map(pkg => (
@@ -138,23 +140,14 @@ export default function Home() {
               onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
               onClick={() => navigate(`/package/${pkg.id}`)}
               >
-                {/* Image */}
-                <div style={{
-                  height: '120px',
-                  backgroundColor: '#e0e0e0',
-                  backgroundImage: pkg.image ? `url('${pkg.image}')` : 'none',
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }} />
                 {/* Content */}
-                <div style={{ padding: '12px' }}>
+                <div style={{ padding: '16px' }}>
                   <h3 style={{
-                    fontSize: '14px',
+                    fontSize: '16px',
                     fontWeight: '700',
-                    marginBottom: '6px',
+                    marginBottom: '8px',
                     color: '#000',
-                    lineHeight: '1.3',
-                    minHeight: '2.6em'
+                    lineHeight: '1.3'
                   }}>
                     {pkg.name}
                   </h3>
@@ -163,13 +156,13 @@ export default function Home() {
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '4px',
-                    fontSize: '12px',
+                    gap: '6px',
+                    fontSize: '13px',
                     color: '#0066cc',
-                    marginBottom: '8px',
+                    marginBottom: '12px',
                     fontWeight: '600'
                   }}>
-                    <Building2 size={12} />
+                    <Building2 size={14} />
                     <span>{pkg.agencies || 'Agensi'}</span>
                   </div>
 
@@ -177,45 +170,70 @@ export default function Home() {
                   <div style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '6px',
-                    marginBottom: '10px',
-                    fontSize: '11px',
+                    gap: '8px',
+                    marginBottom: '12px',
+                    fontSize: '12px',
                     color: '#666'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <MapPin size={12} style={{ color: '#0066cc', flexShrink: 0 }} />
-                      <span>{pkg.departureCity || 'Keberangkatan'}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <MapPin size={14} style={{ color: '#0066cc', flexShrink: 0 }} />
+                      <span><strong>Dari:</strong> {pkg.departureCity}</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <MapPin size={12} style={{ color: '#0066cc', flexShrink: 0 }} />
-                      <span>{pkg.destination}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <MapPin size={14} style={{ color: '#0066cc', flexShrink: 0 }} />
+                      <span><strong>Ke:</strong> {pkg.destination}</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Clock size={12} style={{ color: '#0066cc', flexShrink: 0 }} />
-                      <span>{pkg.duration} Hari</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Clock size={14} style={{ color: '#0066cc', flexShrink: 0 }} />
+                      <span><strong>Durasi:</strong> {pkg.duration} Hari</span>
                     </div>
                   </div>
 
-                  {/* Price */}
+                  {/* Price and Button */}
                   <div style={{
-                    paddingTop: '8px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '12px',
+                    paddingTop: '12px',
                     borderTop: '1px solid #f0f0f0'
                   }}>
-                    <p style={{
-                      fontSize: '16px',
-                      fontWeight: '700',
-                      color: '#000',
-                      margin: 0
-                    }}>
-                      Rp{pkg.price?.toLocaleString('id-ID') || '0'}
-                    </p>
-                    <p style={{
-                      fontSize: '10px',
-                      color: '#999',
-                      margin: '2px 0 0 0'
-                    }}>
-                      per orang
-                    </p>
+                    <div>
+                      <p style={{
+                        fontSize: '18px',
+                        fontWeight: '700',
+                        color: '#000',
+                        margin: 0
+                      }}>
+                        Rp{pkg.price?.toLocaleString('id-ID') || '0'}
+                      </p>
+                      <p style={{
+                        fontSize: '11px',
+                        color: '#999',
+                        margin: '2px 0 0 0'
+                      }}>
+                        per orang
+                      </p>
+                    </div>
+                    <button
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: '#000',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        whiteSpace: 'nowrap'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/package/${pkg.id}`);
+                      }}
+                    >
+                      Lihat Detail
+                    </button>
                   </div>
                 </div>
               </div>
@@ -248,22 +266,22 @@ export default function Home() {
         marginTop: '60px'
       }}>
         <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto'
+          maxWidth: '600px',
+          margin: '0 auto',
+          textAlign: 'center'
         }}>
           <h2 style={{
             fontSize: '32px',
             fontWeight: '700',
             marginBottom: '40px',
-            textAlign: 'center',
             color: '#000'
           }}>
             Mengapa Pilih MoUmroh?
           </h2>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '30px'
+            gridTemplateColumns: '1fr',
+            gap: '24px'
           }}>
             {[
               { icon: '✓', title: 'Agensi Terpercaya', desc: 'Hanya dari agensi yang telah terverifikasi' },
@@ -272,7 +290,6 @@ export default function Home() {
               { icon: '⭐', title: 'Rating & Review', desc: 'Lihat ulasan dari ribuan jamaah' }
             ].map((feature, idx) => (
               <div key={idx} style={{
-                textAlign: 'center',
                 padding: '20px'
               }}>
                 <p style={{
