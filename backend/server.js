@@ -6,18 +6,19 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
  
-// MongoDB Connection with proper timeout configuration
+// MongoDB Connection with enhanced timeout configuration for Vercel serverless
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://satyadjojosugito_db_user:MoUmroh2024Secure@cluster0.ww85n6s.mongodb.net/moumroh?appName=Cluster0';
  
-// Enhanced connection options for Vercel serverless
+// Enhanced connection options optimized for serverless
 const mongoOptions = {
-  serverSelectionTimeoutMS: 10000,    // Wait up to 10s to find a server
-  socketTimeoutMS: 60000,              // 60s socket timeout
-  connectTimeoutMS: 15000,             // 15s connection timeout
+  serverSelectionTimeoutMS: 20000,    // Wait up to 20s to find a server
+  socketTimeoutMS: 90000,              // 90s socket timeout
+  connectTimeoutMS: 20000,             // 20s connection timeout
   retryWrites: true,
   w: 'majority',
-  maxPoolSize: 10,
-  minPoolSize: 2,
+  maxPoolSize: 5,                      // Reduced for serverless
+  minPoolSize: 1,                      // Reduced for serverless
+  maxIdleTimeMS: 60000,                // Close idle connections after 60s
 };
  
 // Connect to MongoDB
@@ -25,7 +26,6 @@ mongoose.connect(MONGODB_URI, mongoOptions)
   .then(() => console.log('✅ Connected to MongoDB'))
   .catch(err => {
     console.error('❌ MongoDB connection error:', err.message);
-    // Don't exit - let Vercel handle errors gracefully
   });
  
 // Handle connection events
