@@ -166,21 +166,23 @@ const AdminPanel = () => {
     }
   };
 
-  const handleEditPackage = (pkg) => {
-    setEditingId(pkg.id);
-    setFormData({
-      name: pkg.name,
-      destination: pkg.destination,
-      price: pkg.price,
-      duration: pkg.duration,
-      departureCity: pkg.departureCity,
-      departureDate: pkg.departureDate,
-      imageUrl: pkg.image,
-      description: pkg.description,
-      agencyId: pkg.agencies || '',
-    });
-    setShowAddForm(true);
-  };
+const handleEditPackage = (pkg) => {
+  setEditingId(pkg.id);
+  // Match agency name to ID, or use as-is if it's already an ID
+  const agencyIdToSet = agencies.find(a => a.name === pkg.agencies)?.id || pkg.agencies || '';
+  setFormData({
+    name: pkg.name,
+    destination: pkg.destination,
+    price: pkg.price,
+    duration: pkg.duration,
+    departureCity: pkg.departureCity,
+    departureDate: pkg.departureDate,
+    imageUrl: pkg.image,
+    description: pkg.description,
+    agencyId: agencyIdToSet,
+  });
+  setShowAddForm(true);
+};
 
   const handleCancelEdit = () => {
     setEditingId(null);
