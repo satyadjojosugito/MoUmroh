@@ -6,13 +6,40 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
  
-// MongoDB Connection - Simple and Direct
+// MongoDB Connection with proper timeout configuration
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://satyadjojosugito_db_user:MoUmroh2024Secure@cluster0.ww85n6s.mongodb.net/moumroh?appName=Cluster0';
  
-// Connect to MongoDB - Simple approach
-mongoose.connect(MONGODB_URI)
+// Enhanced connection options for Vercel serverless
+const mongoOptions = {
+  serverSelectionTimeoutMS: 10000,    // Wait up to 10s to find a server
+  socketTimeoutMS: 60000,              // 60s socket timeout
+  connectTimeoutMS: 15000,             // 15s connection timeout
+  retryWrites: true,
+  w: 'majority',
+  maxPoolSize: 10,
+  minPoolSize: 2,
+};
+ 
+// Connect to MongoDB
+mongoose.connect(MONGODB_URI, mongoOptions)
   .then(() => console.log('✅ Connected to MongoDB'))
-  .catch(err => console.error('❌ MongoDB error:', err.message));
+  .catch(err => {
+    console.error('❌ MongoDB connection error:', err.message);
+    // Don't exit - let Vercel handle errors gracefully
+  });
+ 
+// Handle connection events
+mongoose.connection.on('connected', () => {
+  console.log('✅ Mongoose connected to MongoDB');
+});
+ 
+mongoose.connection.on('error', (err) => {
+  console.error('❌ Mongoose connection error:', err);
+});
+ 
+mongoose.connection.on('disconnected', () => {
+  console.warn('⚠️ Mongoose disconnected from MongoDB');
+});
  
 // Middleware
 app.use(cors());
@@ -133,6 +160,7 @@ app.get('/api/packages/:id', async (req, res) => {
 // Add new package
 app.post('/api/packages', async (req, res) => {
   try {
+    console.log('💾 Adding new package...');
     const { name, destination, price, duration, departureCity, departureDate, rating, image, description, agencies } = req.body;
  
     if (!name || !destination || !price || !duration || !departureCity || !departureDate) {
@@ -155,6 +183,7 @@ app.post('/api/packages', async (req, res) => {
     });
  
     const savedPackage = await newPackage.save();
+    console.log('✅ Package saved:', savedPackage._id);
     res.status(201).json(transformDoc(savedPackage));
   } catch (error) {
     console.error('Error saving package:', error.message);
@@ -270,6 +299,7 @@ app.get('/api/agencies/:id', async (req, res) => {
 // Add new agency
 app.post('/api/agencies', async (req, res) => {
   try {
+    console.log('💾 Adding new agency...');
     const { name, email, phone, address } = req.body;
  
     if (!name || !email || !phone) {
@@ -284,6 +314,7 @@ app.post('/api/agencies', async (req, res) => {
     });
  
     const savedAgency = await newAgency.save();
+    console.log('✅ Agency saved:', savedAgency._id);
     res.status(201).json(transformDoc(savedAgency));
   } catch (error) {
     console.error('Error saving agency:', error.message);
@@ -338,7 +369,12 @@ app.delete('/api/agencies/:id', async (req, res) => {
  
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'Server is running', timestamp: new Date() });
+  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  res.json({
+    status: 'Server is running',
+    database: dbStatus,
+    timestamp: new Date()
+  });
 });
  
 // 404 handler
