@@ -8,7 +8,6 @@ import PackageDetail from './pages/PackageDetail';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import AdminPanel from './pages/AdminPanel';
-import './App.css';
 
 function AppContent() {
   const location = useLocation();
