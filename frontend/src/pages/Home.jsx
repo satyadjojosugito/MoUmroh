@@ -14,7 +14,7 @@ export default function Home() {
   const fetchPackages = async () => {
     try {
       const response = await axios.get(`${API_URL}/packages`);
-      setPackages(response.data);
+      setPackages(response.data.slice(0, 12)); // Show top 12
       setLoading(false);
     } catch (error) {
       console.error('Error fetching packages:', error);
@@ -26,11 +26,20 @@ export default function Home() {
       navigate(`/packages?search=${encodeURIComponent(searchQuery)}`);
     }
   };
+
+  // Extract month from date string (YYYY-MM-DD format)
+  const getMonthName = (dateString) => {
+    if (!dateString) return '';
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const date = new Date(dateString);
+    return months[date.getMonth()];
+  };
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#ffffff' }}>
       {/* Hero Section */}
       <section style={{
-        padding: '80px 20px',
+        padding: '60px 20px',
         textAlign: 'center',
         backgroundColor: '#f8f9fa',
         borderBottom: '1px solid #e0e0e0'
@@ -44,18 +53,11 @@ export default function Home() {
           🕌 MoUmroh
         </h1>
         <p style={{
-          fontSize: '20px',
-          color: '#666',
-          marginBottom: '8px'
-        }}>
-          Platform Marketplace Paket Umroh Terpercaya
-        </p>
-        <p style={{
           fontSize: '16px',
           color: '#999',
           marginBottom: '40px'
         }}>
-          Temukan paket umroh terbaik dari berbagai agensi terkemuka
+          Temukan paket umroh terbaik dari berbagai travel terkemuka
         </p>
         {/* Search Bar */}
         <div style={{
@@ -106,16 +108,14 @@ export default function Home() {
           fontSize: '32px',
           fontWeight: '700',
           marginBottom: '8px',
-          color: '#000',
-          textAlign: 'center'
+          color: '#000'
         }}>
           Paket Unggulan
         </h2>
         <p style={{
           fontSize: '16px',
           color: '#666',
-          marginBottom: '40px',
-          textAlign: 'center'
+          marginBottom: '40px'
         }}>
           Koleksi paket umroh pilihan dengan harga terjangkau
         </p>
@@ -125,7 +125,7 @@ export default function Home() {
           <div style={{
             display: 'grid',
             gridTemplateColumns: '1fr',
-            gap: '16px'
+            gap: '12px'
           }}>
             {packages.map(pkg => (
               <div key={pkg.id} style={{
@@ -141,11 +141,11 @@ export default function Home() {
               onClick={() => navigate(`/package/${pkg.id}`)}
               >
                 {/* Content */}
-                <div style={{ padding: '16px' }}>
+                <div style={{ padding: '10px' }}>
                   <h3 style={{
-                    fontSize: '16px',
+                    fontSize: '14px',
                     fontWeight: '700',
-                    marginBottom: '8px',
+                    marginBottom: '6px',
                     color: '#000',
                     lineHeight: '1.3'
                   }}>
@@ -156,13 +156,13 @@ export default function Home() {
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '13px',
+                    gap: '4px',
+                    fontSize: '11px',
                     color: '#0066cc',
-                    marginBottom: '12px',
+                    marginBottom: '8px',
                     fontWeight: '600'
                   }}>
-                    <Building2 size={14} />
+                    <Building2 size={11} />
                     <span>{pkg.agencies || 'Agensi'}</span>
                   </div>
 
@@ -170,70 +170,49 @@ export default function Home() {
                   <div style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '8px',
-                    marginBottom: '12px',
-                    fontSize: '12px',
+                    gap: '5px',
+                    marginBottom: '8px',
+                    fontSize: '10px',
                     color: '#666'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <MapPin size={14} style={{ color: '#0066cc', flexShrink: 0 }} />
-                      <span><strong>Dari:</strong> {pkg.departureCity}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <MapPin size={11} style={{ color: '#0066cc', flexShrink: 0 }} />
+                      <span>{pkg.departureCity || 'Keberangkatan'}</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <MapPin size={14} style={{ color: '#0066cc', flexShrink: 0 }} />
-                      <span><strong>Ke:</strong> {pkg.destination}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <MapPin size={11} style={{ color: '#0066cc', flexShrink: 0 }} />
+                      <span>{pkg.destination}</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Clock size={14} style={{ color: '#0066cc', flexShrink: 0 }} />
-                      <span><strong>Durasi:</strong> {pkg.duration} Hari</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Clock size={11} style={{ color: '#0066cc', flexShrink: 0 }} />
+                      <span>{pkg.duration} Hari</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Clock size={11} style={{ color: '#0066cc', flexShrink: 0 }} />
+                      <span>{getMonthName(pkg.departureDate)}</span>
                     </div>
                   </div>
 
-                  {/* Price and Button */}
+                  {/* Price */}
                   <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: '12px',
-                    paddingTop: '12px',
+                    paddingTop: '6px',
                     borderTop: '1px solid #f0f0f0'
                   }}>
-                    <div>
-                      <p style={{
-                        fontSize: '18px',
-                        fontWeight: '700',
-                        color: '#000',
-                        margin: 0
-                      }}>
-                        Rp{pkg.price?.toLocaleString('id-ID') || '0'}
-                      </p>
-                      <p style={{
-                        fontSize: '11px',
-                        color: '#999',
-                        margin: '2px 0 0 0'
-                      }}>
-                        per orang
-                      </p>
-                    </div>
-                    <button
-                      style={{
-                        padding: '8px 16px',
-                        backgroundColor: '#000',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        whiteSpace: 'nowrap'
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/package/${pkg.id}`);
-                      }}
-                    >
-                      Lihat Detail
-                    </button>
+                    <p style={{
+                      fontSize: '14px',
+                      fontWeight: '700',
+                      color: '#000',
+                      margin: 0
+                    }}>
+                      Rp{pkg.price?.toLocaleString('id-ID') || '0'}
+                    </p>
+                    <p style={{
+                      fontSize: '9px',
+                      color: '#999',
+                      margin: '1px 0 0 0'
+                    }}>
+                      per orang
+                    </p>
                   </div>
                 </div>
               </div>
@@ -267,13 +246,13 @@ export default function Home() {
       }}>
         <div style={{
           maxWidth: '600px',
-          margin: '0 auto',
-          textAlign: 'center'
+          margin: '0 auto'
         }}>
           <h2 style={{
             fontSize: '32px',
             fontWeight: '700',
             marginBottom: '40px',
+            textAlign: 'center',
             color: '#000'
           }}>
             Mengapa Pilih MoUmroh?
@@ -286,10 +265,10 @@ export default function Home() {
             {[
               { icon: '✓', title: 'Agensi Terpercaya', desc: 'Hanya dari agensi yang telah terverifikasi' },
               { icon: '💰', title: 'Harga Kompetitif', desc: 'Bandingkan harga dan pilih yang terbaik' },
-              { icon: '🛡️', title: 'Aman & Terpercaya', desc: 'Proses booking yang transparan dan aman' },
-              { icon: '⭐', title: 'Rating & Review', desc: 'Lihat ulasan dari ribuan jamaah' }
+              { icon: '🛡️', title: 'Aman & Terpercaya', desc: 'Proses booking yang transparan dan aman' }
             ].map((feature, idx) => (
               <div key={idx} style={{
+                textAlign: 'center',
                 padding: '20px'
               }}>
                 <p style={{
