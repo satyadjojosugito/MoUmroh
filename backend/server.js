@@ -6,44 +6,76 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
  
-// MongoDB Connection with enhanced timeout configuration for Vercel serverless
+// MongoDB Connection optimized for Vercel serverless
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://satyadjojosugito_db_user:MoUmroh2024Secure@cluster0.ww85n6s.mongodb.net/moumroh?appName=Cluster0';
  
-// Enhanced connection options optimized for serverless
+// CRITICAL: Serverless-optimized MongoDB options
 const mongoOptions = {
-  serverSelectionTimeoutMS: 20000,    // Wait up to 20s to find a server
-  socketTimeoutMS: 90000,              // 90s socket timeout
-  connectTimeoutMS: 20000,             // 20s connection timeout
+  serverSelectionTimeoutMS: 30000,    // 30 seconds to find a server
+  socketTimeoutMS: 120000,             // 120 seconds socket timeout
+  connectTimeoutMS: 30000,             // 30 seconds connection timeout
   retryWrites: true,
   w: 'majority',
-  maxPoolSize: 5,                      // Reduced for serverless
-  minPoolSize: 1,                      // Reduced for serverless
-  maxIdleTimeMS: 60000,                // Close idle connections after 60s
+  maxPoolSize: 2,                      // Very small for serverless
+  minPoolSize: 0,                      // Let it scale down to 0
+  maxIdleTimeMS: 10000,                // Close idle connections quickly
+  serverMonitoringMode: 'auto',
+  waitQueueTimeoutMS: 30000,
 };
  
-// Connect to MongoDB
-mongoose.connect(MONGODB_URI, mongoOptions)
-  .then(() => console.log('✅ Connected to MongoDB'))
-  .catch(err => {
+// Store connection state
+let isConnected = false;
+ 
+// Connect to MongoDB with retry logic
+const connectDB = async () => {
+  if (isConnected) {
+    console.log('✅ Using existing MongoDB connection');
+    return;
+  }
+ 
+  try {
+    await mongoose.connect(MONGODB_URI, mongoOptions);
+    isConnected = true;
+    console.log('✅ Connected to MongoDB');
+  } catch (err) {
     console.error('❌ MongoDB connection error:', err.message);
-  });
+    isConnected = false;
+    throw err;
+  }
+};
  
 // Handle connection events
 mongoose.connection.on('connected', () => {
+  isConnected = true;
   console.log('✅ Mongoose connected to MongoDB');
 });
  
 mongoose.connection.on('error', (err) => {
+  isConnected = false;
   console.error('❌ Mongoose connection error:', err);
 });
  
 mongoose.connection.on('disconnected', () => {
+  isConnected = false;
   console.warn('⚠️ Mongoose disconnected from MongoDB');
 });
  
 // Middleware
 app.use(cors());
 app.use(express.json());
+ 
+// Ensure connection before each request
+app.use(async (req, res, next) => {
+  try {
+    if (!isConnected) {
+      await connectDB();
+    }
+    next();
+  } catch (err) {
+    console.error('Connection middleware error:', err);
+    res.status(503).json({ error: 'Database connection failed' });
+  }
+});
  
 // Helper function to transform MongoDB _id to id
 const transformDoc = (doc) => {
@@ -242,33 +274,6 @@ app.delete('/api/packages/:id', async (req, res) => {
   }
 });
  
-// Search endpoint
-app.post('/api/packages/search', async (req, res) => {
-  try {
-    const { name, minPrice, maxPrice, duration } = req.body;
-    let query = {};
- 
-    if (name) {
-      query.name = { $regex: name, $options: 'i' };
-    }
- 
-    if (minPrice || maxPrice) {
-      query.price = {};
-      if (minPrice) query.price.$gte = minPrice;
-      if (maxPrice) query.price.$lte = maxPrice;
-    }
- 
-    if (duration) {
-      query.duration = duration;
-    }
- 
-    const packages = await Package.find(query);
-    res.json(packages.map(transformDoc));
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
- 
 // ===== AGENCY ENDPOINTS =====
  
 // Get all agencies
@@ -277,6 +282,7 @@ app.get('/api/agencies', async (req, res) => {
     const agencies = await Agency.find();
     res.json(agencies.map(transformDoc));
   } catch (error) {
+    console.error('Error fetching agencies:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -397,3 +403,4 @@ app.listen(PORT, () => {
 });
  
 module.exports = app;
+ 
