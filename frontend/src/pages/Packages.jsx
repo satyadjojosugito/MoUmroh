@@ -18,6 +18,7 @@ export default function Packages() {
   });
   const [departureCities, setDepartureCities] = useState([]);
   const [years, setYears] = useState([]);
+  const [agencyMap, setAgencyMap] = useState({});
  
   // Initialize years and cities on mount
   useEffect(() => {
@@ -35,8 +36,14 @@ export default function Packages() {
  
   const fetchAllPackages = async () => {
     try {
-      const response = await axios.get(`${API_URL}/packages`);
-      const uniqueCities = [...new Set(response.data.map(pkg => pkg.departureCity))];
+      const [pkgRes, agencyRes] = await Promise.all([
+        axios.get(`${API_URL}/packages`),
+        axios.get(`${API_URL}/agencies`).catch(() => ({ data: [] })),
+      ]);
+      const map = {};
+      (agencyRes.data || []).forEach(a => { map[String(a.id)] = a.name; });
+      setAgencyMap(map);
+      const uniqueCities = [...new Set(pkgRes.data.map(pkg => pkg.departureCity))];
       setDepartureCities(uniqueCities.sort());
     } catch (error) {
       console.error('Error fetching cities:', error);
@@ -75,6 +82,12 @@ export default function Packages() {
     return `Rp${amount?.toLocaleString('id-ID') || '0'}`;
   };
  
+  const getAgencyLabel = (value) => {
+    if (!value) return '';
+    if (agencyMap[value]) return agencyMap[value];
+    return /^[a-f0-9]{24}$/i.test(value) ? '' : value;
+  };
+  
   const formatDateMonthYear = (dateString) => {
     if (!dateString) return '';
     const options = { year: 'numeric', month: 'long' };
@@ -370,7 +383,7 @@ export default function Packages() {
                           marginBottom: '8px',
                           fontWeight: '600'
                         }}>
-                          🏢 {pkg.agencies.name}
+                          🏢 {getAgencyLabel(pkg.agencies)}
                         </p>
                       )}
  

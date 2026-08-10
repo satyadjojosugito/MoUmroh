@@ -8,24 +8,37 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [agencyMap, setAgencyMap] = useState({});
   useEffect(() => {
     fetchPackages();
   }, []);
   const fetchPackages = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/packages`);
-      setPackages(response.data.slice(0, 12)); // Show top 12
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching packages:', error);
-      setLoading(false);
-    }
-  };
-  const handleSearch = () => {
+  try {
+    const [pkgRes, agencyRes] = await Promise.all([
+      axios.get(`${API_URL}/packages`),
+      axios.get(`${API_URL}/agencies`).catch(() => ({ data: [] })),
+    ]);
+    const map = {};
+    (agencyRes.data || []).forEach(a => { map[String(a.id)] = a.name; });
+    setAgencyMap(map);
+    setPackages(pkgRes.data.slice(0, 12));
+  } catch (error) {
+    console.error('Error fetching packages:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+const handleSearch = () => {
     if (searchQuery.trim()) {
       navigate(`/packages?search=${encodeURIComponent(searchQuery)}`);
     }
   };
+const getAgencyLabel = (value) => {
+  if (!value) return 'Agensi';
+  if (agencyMap[value]) return agencyMap[value];
+  return /^[a-f0-9]{24}$/i.test(value) ? 'Agensi' : value;
+};
+
 
   // Extract month from date string (YYYY-MM-DD format)
   const getMonthName = (dateString) => {
@@ -163,7 +176,7 @@ export default function Home() {
                     fontWeight: '600'
                   }}>
                     <Building2 size={11} />
-                    <span>{pkg.agencies || 'Agensi'}</span>
+                    <span>{getAgencyLabel(pkg.agencies)}</span>
                   </div>
 
                   {/* Info Grid */}

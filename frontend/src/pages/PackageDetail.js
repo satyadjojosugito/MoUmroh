@@ -1,153 +1,272 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, Users, Calendar, CheckCircle, MapPin } from 'lucide-react';
-import { SAMPLE_PACKAGES } from '../data/packages';
-
+import axios from 'axios';
+import { MapPin, Clock, Calendar, Building2, CheckCircle } from 'lucide-react';
+ 
+const API_URL = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
+ 
 export default function PackageDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const pkg = SAMPLE_PACKAGES.find(p => p.id === parseInt(id));
-
+  const [pkg, setPkg] = useState(null);
+  const [agencyMap, setAgencyMap] = useState({});
+  const [loading, setLoading] = useState(true);
+ 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [pkgRes, agencyRes] = await Promise.all([
+          axios.get(`${API_URL}/packages`),
+          axios.get(`${API_URL}/agencies`).catch(() => ({ data: [] })),
+        ]);
+ 
+        const map = {};
+        (agencyRes.data || []).forEach(a => { map[String(a.id)] = a.name; });
+        setAgencyMap(map);
+ 
+        const found = (pkgRes.data || []).find(p => String(p.id) === String(id));
+        setPkg(found || null);
+      } catch (error) {
+        console.error('Error fetching package:', error);
+        setPkg(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+ 
+    fetchData();
+  }, [id]);
+ 
+  const formatCurrency = (amount) => `Rp${amount?.toLocaleString('id-ID') || '0'}`;
+ 
+  const formatFullDate = (dateString) => {
+    if (!dateString) return '-';
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString('id-ID', options);
+  };
+ 
+  const getAgencyLabel = (value) => {
+    if (!value) return '';
+    if (agencyMap[value]) return agencyMap[value];
+    return /^[a-f0-9]{24}$/i.test(value) ? '' : value;
+  };
+ 
+  if (loading) {
+    return (
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#999', fontSize: '16px' }}>Memuat paket...</p>
+      </div>
+    );
+  }
+ 
   if (!pkg) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="heading-2 mb-4">Package Not Found</h2>
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '16px', color: '#000' }}>
+            Paket tidak ditemukan
+          </h2>
           <button
             onClick={() => navigate('/packages')}
-            className="btn-primary"
+            style={{
+              padding: '12px 28px',
+              backgroundColor: '#000',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '15px',
+              fontWeight: '600'
+            }}
           >
-            Back to Packages
+            Kembali ke Daftar Paket
           </button>
         </div>
       </div>
     );
   }
-
+ 
+  const agencyName = getAgencyLabel(pkg.agencies);
+  const inclusions = Array.isArray(pkg.inclusions) ? pkg.inclusions : [];
+  const itinerary = Array.isArray(pkg.itinerary) ? pkg.itinerary : [];
+ 
+  const infoRow = (Icon, label, value) => (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '14px' }}>
+      <Icon size={18} style={{ color: '#0066cc', flexShrink: 0, marginTop: '2px' }} />
+      <div>
+        <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>{label}</p>
+        <p style={{ fontSize: '15px', fontWeight: '600', color: '#000', margin: '2px 0 0 0' }}>{value}</p>
+      </div>
+    </div>
+  );
+ 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div style={{ minHeight: '100vh', backgroundColor: '#fff' }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '32px 20px 60px' }}>
+ 
         <button
           onClick={() => navigate('/packages')}
-          className="text-blue-600 font-semibold mb-8 hover:text-blue-700"
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#0066cc',
+            fontSize: '14px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            padding: 0,
+            marginBottom: '24px'
+          }}
         >
-          ← Back to Packages
+          ← Kembali ke Daftar Paket
         </button>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            {/* Image */}
-            <div className="mb-8 rounded-lg overflow-hidden">
-              <img
-                src={pkg.image}
-                alt={pkg.name}
-                className="w-full h-96 object-cover"
-              />
-            </div>
-
-            {/* Header */}
-            <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h1 className="heading-1 mb-2">{pkg.name}</h1>
-                  <p className="text-xl text-gray-600 flex items-center gap-2">
-                    <MapPin size={20} />
-                    {pkg.destination}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-6 mb-6">
-                <div className="flex items-center gap-2">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={20} className={i < pkg.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"} />
-                  ))}
-                  <span className="text-gray-600">({pkg.reviews} reviews)</span>
-                </div>
-              </div>
-
-              <p className="text-gray-700 text-lg mb-6">{pkg.description}</p>
-
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="flex items-center gap-3">
-                  <Calendar size={20} className="text-blue-600" />
-                  <div>
-                    <p className="text-gray-600 text-sm">Duration</p>
-                    <p className="font-semibold">{pkg.days} Days</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Users size={20} className="text-blue-600" />
-                  <div>
-                    <p className="text-gray-600 text-sm">Available Seats</p>
-                    <p className="font-semibold">{pkg.maxParticipants}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Itinerary */}
-            <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-              <h2 className="heading-2 mb-6">Itinerary</h2>
-              <div className="space-y-4">
-                {pkg.itinerary.map((day, idx) => (
-                  <div key={idx} className="pb-4 border-b last:border-b-0">
-                    <h3 className="font-bold text-blue-600 mb-2">Day {day.day}: {day.title}</h3>
-                    <p className="text-gray-700">{day.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Inclusions */}
-            <div className="bg-white rounded-lg shadow-md p-8">
-              <h2 className="heading-2 mb-6">What's Included</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {pkg.inclusions.map((inclusion, idx) => (
-                  <div key={idx} className="flex items-start gap-3">
-                    <CheckCircle size={20} className="text-green-600 mt-1 flex-shrink-0" />
-                    <span className="text-gray-700">{inclusion}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+ 
+        {/* Image */}
+        {pkg.image && (
+          <div style={{
+            height: '280px',
+            borderRadius: '12px',
+            backgroundColor: '#e0e0e0',
+            backgroundImage: `url('${pkg.image}')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            marginBottom: '28px'
+          }} />
+        )}
+ 
+        {/* Title */}
+        <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#000', marginBottom: '8px', lineHeight: '1.2' }}>
+          {pkg.name}
+        </h1>
+ 
+        {agencyName && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '14px',
+            color: '#0066cc',
+            fontWeight: '600',
+            marginBottom: '24px'
+          }}>
+            <Building2 size={15} />
+            <span>{agencyName}</span>
           </div>
-
-          {/* Sidebar - Booking Card */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-8 sticky top-24">
-              <div className="mb-6">
-                <p className="text-gray-600 text-sm mb-2">Price per person</p>
-                <p className="heading-1 text-blue-600">${pkg.price}</p>
-              </div>
-
-              <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Departure</p>
-                <p className="font-semibold text-gray-900">{pkg.departure}</p>
-              </div>
-
-              <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Agency</p>
-                <p className="font-semibold text-gray-900">{pkg.agency}</p>
-              </div>
-
-              <button className="w-full btn-primary mb-4">
-                Book Now
-              </button>
-
-              <button className="w-full btn-secondary">
-                Contact Agency
-              </button>
-
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <p className="text-xs text-gray-600 mb-2">✓ Verified Agency</p>
-                <p className="text-xs text-gray-600 mb-2">✓ Money Back Guarantee</p>
-                <p className="text-xs text-gray-600">✓ 24/7 Customer Support</p>
-              </div>
-            </div>
-          </div>
+        )}
+ 
+        {/* Price */}
+        <div style={{
+          padding: '20px',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '12px',
+          marginBottom: '28px'
+        }}>
+          <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>Harga per orang</p>
+          <p style={{ fontSize: '30px', fontWeight: '700', color: '#000', margin: '4px 0 0 0' }}>
+            {formatCurrency(pkg.price)}
+          </p>
         </div>
+ 
+        {/* Key details */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '4px 24px',
+          padding: '20px',
+          border: '1px solid #e0e0e0',
+          borderRadius: '12px',
+          marginBottom: '28px'
+        }}>
+          {infoRow(MapPin, 'Tujuan', pkg.destination || '-')}
+          {infoRow(MapPin, 'Kota Keberangkatan', pkg.departureCity || '-')}
+          {infoRow(Calendar, 'Tanggal Keberangkatan', formatFullDate(pkg.departureDate))}
+          {infoRow(Clock, 'Durasi', `${pkg.duration || '-'} Hari`)}
+        </div>
+ 
+        {/* Description */}
+        {pkg.description && (
+          <div style={{ marginBottom: '28px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#000', marginBottom: '12px' }}>
+              Deskripsi
+            </h2>
+            <p style={{ fontSize: '15px', color: '#444', lineHeight: '1.7', margin: 0 }}>
+              {pkg.description}
+            </p>
+          </div>
+        )}
+ 
+        {/* Inclusions */}
+        {inclusions.length > 0 && (
+          <div style={{ marginBottom: '28px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#000', marginBottom: '12px' }}>
+              Yang Termasuk
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px' }}>
+              {inclusions.map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                  <CheckCircle size={17} style={{ color: '#16a34a', flexShrink: 0, marginTop: '2px' }} />
+                  <span style={{ fontSize: '14px', color: '#444' }}>
+                    {typeof item === 'string' ? item : item?.name || ''}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+ 
+        {/* Itinerary */}
+        {itinerary.length > 0 && (
+          <div style={{ marginBottom: '28px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#000', marginBottom: '12px' }}>
+              Rencana Perjalanan
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {itinerary.map((day, idx) => {
+                const isObject = day && typeof day === 'object';
+                const title = isObject ? (day.title || `Hari ${day.day || idx + 1}`) : `Hari ${idx + 1}`;
+                const body = isObject ? day.description : day;
+                return (
+                  <div key={idx} style={{ paddingBottom: '14px', borderBottom: '1px solid #f0f0f0' }}>
+                    <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0066cc', margin: '0 0 4px 0' }}>
+                      {title}
+                    </h3>
+                    {body && (
+                      <p style={{ fontSize: '14px', color: '#555', margin: 0, lineHeight: '1.6' }}>{body}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+ 
+        {/* Contact */}
+        <div style={{
+          padding: '24px',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '12px',
+          textAlign: 'center'
+        }}>
+          <p style={{ fontSize: '15px', color: '#444', margin: '0 0 16px 0' }}>
+            Tertarik dengan paket ini? Hubungi agensi untuk informasi lebih lanjut.
+          </p>
+          <button
+            onClick={() => navigate('/contact')}
+            style={{
+              padding: '13px 36px',
+              backgroundColor: '#000',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '15px',
+              fontWeight: '600'
+            }}
+          >
+            Hubungi Kami
+          </button>
+        </div>
+ 
       </div>
     </div>
   );

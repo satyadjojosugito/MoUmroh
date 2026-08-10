@@ -120,7 +120,7 @@ const AdminPanel = () => {
         image: formData.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image',
         description: formData.description,
         rating: 5,
-        agencies: selectedAgency.name, // Send the agency name
+        agencies: selectedAgency.id.toString(),
       };
 
       console.log('Package to send:', newPackage);
