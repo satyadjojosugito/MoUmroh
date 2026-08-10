@@ -11,11 +11,11 @@ import AdminPanel from './pages/AdminPanel';
 
 function AppContent() {
   const location = useLocation();
-  const isHomePage = location.pathname === '/';
+  const hideNav = ['/', '/packages'].includes(location.pathname);
 
   return (
     <>
-      {!isHomePage && <Header />}
+      {!hideNav && <Header />}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/packages" element={<Packages />} />
@@ -24,7 +24,7 @@ function AppContent() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/admin" element={<AdminPanel />} />
       </Routes>
-      {!isHomePage && <Footer />}
+      {!hideNav && <Footer />}
     </>
   );
 }
