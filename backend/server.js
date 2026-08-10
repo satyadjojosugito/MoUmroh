@@ -7,7 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
  
 // MongoDB Connection optimized for Vercel serverless
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://satyadjojosugito_db_user:MoUmroh2024Secure@cluster0.ww85n6s.mongodb.net/moumroh?appName=Cluster0';
+const MONGODB_URI = process.env.MONGODB_URI;
  
 // CRITICAL: Serverless-optimized MongoDB options
 const mongoOptions = {
@@ -61,7 +61,21 @@ mongoose.connection.on('disconnected', () => {
 });
  
 // Middleware
-app.use(cors());
+const allowedOrigins = [
+  'https://moumroh.com',
+  'https://www.moumroh.com',
+  'https://mo-umroh-kugx-five.vercel.app',
+  'http://localhost:3000',
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error('Not allowed by CORS'));
+  },
+  allowedHeaders: ['Content-Type', 'x-admin-key'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+}));
 app.use(express.json());
  
 // Ensure connection before each request
@@ -75,8 +89,22 @@ app.use(async (req, res, next) => {
     console.error('Connection middleware error:', err);
     res.status(503).json({ error: 'Database connection failed' });
   }
+
 });
- 
+// Require admin key for all write operations
+app.use((req, res, next) => {
+  if (req.method === 'GET' || req.method === 'OPTIONS') return next();
+
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret) {
+    return res.status(500).json({ error: 'Server not configured for admin access' });
+  }
+  if (req.headers['x-admin-key'] !== secret) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}); 
+
 // Helper function to transform MongoDB _id to id
 const transformDoc = (doc) => {
   if (!doc) return doc;

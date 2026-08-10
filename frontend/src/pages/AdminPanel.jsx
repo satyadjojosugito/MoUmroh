@@ -25,6 +25,7 @@ const AdminPanel = () => {
   const [message, setMessage] = useState('');
   const [showAddForm, setShowAddForm] = useState(true);
   const [editingId, setEditingId] = useState(null);
+  const [adminKey, setAdminKey] = useState(() => sessionStorage.getItem('adminKey') || '');
 
   // Fetch packages on mount
   useEffect(() => {
@@ -70,6 +71,7 @@ const AdminPanel = () => {
     });
   };
 
+  const authHeader = () => ({ headers: { 'x-admin-key': adminKey } });
   const handleAddPackage = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -130,14 +132,14 @@ const AdminPanel = () => {
       if (editingId) {
         // Update existing package - Use PUT
         console.log('Updating package:', editingId);
-        const response = await axios.put(`${apiUrl}/packages/${editingId}`, newPackage);
+        const response = await axios.put(`${apiUrl}/packages/${editingId}`, newPackage, authHeader());
         setPackages(packages.map(pkg => pkg.id === editingId ? response.data : pkg));
         setMessage('✅ Package updated successfully!');
         setEditingId(null);
       } else {
         // Add new package
         console.log('Creating new package');
-        const response = await axios.post(`${apiUrl}/packages`, newPackage);
+        const response = await axios.post(`${apiUrl}/packages`, newPackage, authHeader());
         console.log('Response from server:', response.data);
         setPackages([...packages, response.data]);
         setMessage('✅ Package added successfully!');
@@ -219,7 +221,7 @@ const handleEditPackage = (pkg) => {
       };
 
       const apiUrl = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
-      await axios.post(`${apiUrl}/agencies`, newAgency);
+      await axios.post(`${apiUrl}/agencies`, newAgency, authHeader());
 
       // Refresh agencies list
       await fetchAgencies();
@@ -245,7 +247,7 @@ const handleEditPackage = (pkg) => {
     if (window.confirm('Are you sure you want to delete this package?')) {
       try {
         const apiUrl = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
-        await axios.delete(`${apiUrl}/packages/${id}`);
+        await axios.delete(`${apiUrl}/packages/${id}`, authHeader());
         setPackages(packages.filter(pkg => pkg.id !== id));
         setMessage('✅ Package deleted successfully!');
         setTimeout(() => setMessage(''), 3000);
@@ -260,7 +262,7 @@ const handleEditPackage = (pkg) => {
     if (window.confirm('Are you sure you want to delete this agency?')) {
       try {
         const apiUrl = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
-        await axios.delete(`${apiUrl}/agencies/${id}`);
+        await axios.delete(`${apiUrl}/agencies/${id}`, authHeader());
         setAgencies(agencies.filter(agency => agency.id !== id));
         setMessage('✅ Agency deleted successfully!');
         setTimeout(() => setMessage(''), 3000);
@@ -287,6 +289,26 @@ const handleEditPackage = (pkg) => {
     return agency?.name || 'Belum ditentukan';
   };
 
+  if (!adminKey) {
+    return (
+      <div style={{ maxWidth: '400px', margin: '80px auto', padding: '24px', textAlign: 'center' }}>
+        <h2 style={{ marginBottom: '16px' }}>Admin Access</h2>
+        <input
+          type="password"
+          placeholder="Admin key"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              sessionStorage.setItem('adminKey', e.target.value);
+              setAdminKey(e.target.value);
+            }
+          }}
+          style={{ width: '100%', padding: '10px', marginBottom: '12px' }}
+        />
+        <p style={{ fontSize: '12px', color: '#999' }}>Press Enter to continue</p>
+      </div>
+    );
+  }
+  
   return (
     <div style={styles.container}>
       {/* Header */}
