@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 require('dotenv').config();
-
+ 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
@@ -70,7 +70,7 @@ const allowedOrigins = [
   'https://mo-umroh-kugx-five.vercel.app',
   'http://localhost:3000',
 ];
-
+ 
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
@@ -92,14 +92,14 @@ app.use(async (req, res, next) => {
     console.error('Connection middleware error:', err);
     res.status(503).json({ error: 'Database connection failed' });
   }
-
+ 
 });
-
+ 
 // Require admin key for all write operations (except auth endpoints)
 app.use((req, res, next) => {
   // Allow GET, OPTIONS, and auth endpoints
   if (req.method === 'GET' || req.method === 'OPTIONS' || req.path.startsWith('/api/auth/')) return next();
-
+ 
   const secret = process.env.ADMIN_SECRET;
   if (!secret) {
     return res.status(500).json({ error: 'Server not configured for admin access' });
@@ -109,7 +109,7 @@ app.use((req, res, next) => {
   }
   next();
 }); 
-
+ 
 // Helper function to transform MongoDB _id to id
 const transformDoc = (doc) => {
   if (!doc) return doc;
@@ -148,50 +148,50 @@ const agencySchema = new mongoose.Schema({
   phone: String,
   address: String,
 }, { timestamps: true });
-
+ 
 // User Schema for authentication
 const userSchema = new mongoose.Schema({
   phone: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
 });
-
+ 
 // Models
 const Package = mongoose.model('Package', packageSchema);
 const Agency = mongoose.model('Agency', agencySchema);
 const User = mongoose.model('User', userSchema);
  
 // ===== AUTH ENDPOINTS =====
-
+ 
 // Register new user
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { phone, password } = req.body;
-
+ 
     if (!phone || !password) {
       return res.status(400).json({ error: 'Phone and password required' });
     }
-
+ 
     // Check if user already exists
     const existingUser = await User.findOne({ phone });
     if (existingUser) {
       return res.status(409).json({ error: 'Phone number already registered' });
     }
-
+ 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-
+ 
     // Create new user
     const newUser = new User({
       phone,
       password: hashedPassword,
     });
-
+ 
     const savedUser = await newUser.save();
-
+ 
     // Generate JWT token
     const token = jwt.sign({ userId: savedUser._id, phone: savedUser.phone }, JWT_SECRET, { expiresIn: '30d' });
-
+ 
     res.status(201).json({
       message: 'User registered successfully',
       token,
@@ -202,31 +202,31 @@ app.post('/api/auth/register', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
+ 
 // Login user
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { phone, password } = req.body;
-
+ 
     if (!phone || !password) {
       return res.status(400).json({ error: 'Phone and password required' });
     }
-
+ 
     // Find user
     const user = await User.findOne({ phone });
     if (!user) {
       return res.status(401).json({ error: 'Invalid phone or password' });
     }
-
+ 
     // Compare password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid phone or password' });
     }
-
+ 
     // Generate JWT token
     const token = jwt.sign({ userId: user._id, phone: user.phone }, JWT_SECRET, { expiresIn: '30d' });
-
+ 
     res.json({
       message: 'Login successful',
       token,
@@ -237,7 +237,7 @@ app.post('/api/auth/login', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
+ 
 // Verify token
 app.post('/api/auth/verify', async (req, res) => {
   try {
@@ -245,16 +245,16 @@ app.post('/api/auth/verify', async (req, res) => {
     if (!token) {
       return res.status(401).json({ error: 'Token required' });
     }
-
+ 
     const decoded = jwt.verify(token, JWT_SECRET);
     res.json({ valid: true, user: { id: decoded.userId, phone: decoded.phone } });
   } catch (error) {
     res.status(401).json({ valid: false, error: 'Invalid token' });
   }
 });
-
+ 
 // ===== PACKAGE ENDPOINTS =====
-
+ 
 // Get all packages
 app.get('/api/packages', async (req, res) => {
   try {
@@ -326,7 +326,7 @@ app.get('/api/packages/:id', async (req, res) => {
 app.post('/api/packages', async (req, res) => {
   try {
     console.log('💾 Adding new package...');
-    const { name, destination, price, duration, departureCity, departureDate, rating, image, description, agencies } = req.body;
+    const { name, destination, price, duration, departureCity, departureDate, rating, image, description, agencies, airlines, hotel, fridayCount, inclusions, exclusions } = req.body;
  
     if (!name || !destination || !price || !duration || !departureCity || !departureDate) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -343,7 +343,11 @@ app.post('/api/packages', async (req, res) => {
       image: image || 'https://via.placeholder.com/400x300?text=No+Image',
       description: description || '',
       agencies: agencies || null,
-      inclusions: [],
+      airlines: airlines || '',
+      hotel: hotel || '',
+      fridayCount: fridayCount ? parseInt(fridayCount) : null,
+      inclusions: Array.isArray(inclusions) ? inclusions : [],
+      exclusions: Array.isArray(exclusions) ? exclusions : [],
       itinerary: [],
     });
  
@@ -359,7 +363,7 @@ app.post('/api/packages', async (req, res) => {
 // Update existing package
 app.put('/api/packages/:id', async (req, res) => {
   try {
-    const { name, destination, price, duration, departureCity, departureDate, rating, image, description, agencies } = req.body;
+    const { name, destination, price, duration, departureCity, departureDate, rating, image, description, agencies, airlines, hotel, fridayCount, inclusions, exclusions } = req.body;
  
     if (!name || !destination || !price || !duration || !departureCity || !departureDate) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -378,6 +382,11 @@ app.put('/api/packages/:id', async (req, res) => {
         image: image || 'https://via.placeholder.com/400x300?text=No+Image',
         description: description || '',
         agencies: agencies || null,
+        airlines: airlines || '',
+        hotel: hotel || '',
+        fridayCount: fridayCount ? parseInt(fridayCount) : null,
+        inclusions: Array.isArray(inclusions) ? inclusions : [],
+        exclusions: Array.isArray(exclusions) ? exclusions : [],
       },
       { new: true }
     );
@@ -536,4 +545,5 @@ app.listen(PORT, () => {
 });
  
 module.exports = app;
+ 
  
