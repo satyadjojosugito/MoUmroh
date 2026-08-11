@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { MapPin, Clock, Building2 } from 'lucide-react';
 const API_URL = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
 export default function Home() {
   const navigate = useNavigate();
@@ -40,12 +39,10 @@ const getAgencyLabel = (value) => {
 };
 
 
-  // Extract month from date string (YYYY-MM-DD format)
-  const getMonthName = (dateString) => {
+  const formatDateMonthYear = (dateString) => {
     if (!dateString) return '';
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const date = new Date(dateString);
-    return months[date.getMonth()];
+    const options = { year: 'numeric', month: 'long' };
+    return new Date(dateString).toLocaleDateString('en-US', options);
   };
 
   return (
@@ -113,7 +110,7 @@ const getAgencyLabel = (value) => {
       </section>
       {/* Featured Packages */}
       <section style={{
-        maxWidth: '600px',
+        maxWidth: '1200px',
         margin: '60px auto',
         padding: '0 20px'
       }}>
@@ -137,26 +134,33 @@ const getAgencyLabel = (value) => {
         ) : (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '1fr',
-            gap: '12px'
+            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+            gap: '20px'
           }}>
             {packages.map(pkg => (
               <div key={pkg.id} style={{
                 border: '1px solid #e0e0e0',
-                borderRadius: '8px',
+                borderRadius: '12px',
                 overflow: 'hidden',
                 transition: 'all 0.3s ease',
                 cursor: 'pointer',
                 backgroundColor: '#fff'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.06)'}
+              onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.1)'}
               onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
               onClick={() => navigate(`/package/${pkg.id}`)}
               >
-                {/* Content */}
-                <div style={{ padding: '10px' }}>
+                <div style={{
+                  height: '160px',
+                  backgroundColor: '#e0e0e0',
+                  backgroundImage: pkg.image ? `url('${pkg.image}')` : 'none',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }} />
+
+                <div style={{ padding: '16px' }}>
                   <h3 style={{
-                    fontSize: '14px',
+                    fontSize: '16px',
                     fontWeight: '700',
                     marginBottom: '6px',
                     color: '#000',
@@ -165,67 +169,73 @@ const getAgencyLabel = (value) => {
                     {pkg.name}
                   </h3>
 
-                  {/* Agency */}
+                  {pkg.agencies && (
+                    <p style={{
+                      fontSize: '12px',
+                      color: '#666',
+                      marginBottom: '8px',
+                      fontWeight: '600'
+                    }}>
+                      🏢 {getAgencyLabel(pkg.agencies)}
+                    </p>
+                  )}
+
+                  <p style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>
+                    ✈️ Tujuan: {pkg.destination}
+                  </p>
+
+                  <p style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>
+                    📍 Keberangkatan: {pkg.departureCity}
+                  </p>
+
+                  <p style={{ fontSize: '13px', color: '#666', marginBottom: '10px' }}>
+                    📅 Bulan: {formatDateMonthYear(pkg.departureDate)}
+                  </p>
+
                   <div style={{
                     display: 'flex',
+                    gap: '8px',
+                    marginBottom: '12px',
+                    fontSize: '12px',
+                    color: '#999',
+                    flexWrap: 'wrap'
+                  }}>
+                    <span>📅 {pkg.duration} Hari</span>
+                  </div>
+
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
-                    gap: '4px',
-                    fontSize: '11px',
-                    color: '#0066cc',
-                    marginBottom: '8px',
-                    fontWeight: '600'
+                    gap: '8px'
                   }}>
-                    <Building2 size={11} />
-                    <span>{getAgencyLabel(pkg.agencies)}</span>
-                  </div>
-
-                  {/* Info Grid */}
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '5px',
-                    marginBottom: '8px',
-                    fontSize: '10px',
-                    color: '#666'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <MapPin size={11} style={{ color: '#0066cc', flexShrink: 0 }} />
-                      <span>{pkg.departureCity || 'Keberangkatan'}</span>
+                    <div>
+                      <p style={{ fontSize: '18px', fontWeight: '700', color: '#000', margin: 0 }}>
+                        Rp{pkg.price?.toLocaleString('id-ID') || '0'}
+                      </p>
+                      <p style={{ fontSize: '11px', color: '#999', margin: '2px 0 0 0' }}>
+                        per orang
+                      </p>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <MapPin size={11} style={{ color: '#0066cc', flexShrink: 0 }} />
-                      <span>{pkg.destination}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Clock size={11} style={{ color: '#0066cc', flexShrink: 0 }} />
-                      <span>{pkg.duration} Hari</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Clock size={11} style={{ color: '#0066cc', flexShrink: 0 }} />
-                      <span>{getMonthName(pkg.departureDate)}</span>
-                    </div>
-                  </div>
-
-                  {/* Price */}
-                  <div style={{
-                    paddingTop: '6px',
-                    borderTop: '1px solid #f0f0f0'
-                  }}>
-                    <p style={{
-                      fontSize: '14px',
-                      fontWeight: '700',
-                      color: '#000',
-                      margin: 0
-                    }}>
-                      Rp{pkg.price?.toLocaleString('id-ID') || '0'}
-                    </p>
-                    <p style={{
-                      fontSize: '9px',
-                      color: '#999',
-                      margin: '1px 0 0 0'
-                    }}>
-                      per orang
-                    </p>
+                    <button
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: '#000',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        whiteSpace: 'nowrap'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/package/${pkg.id}`);
+                      }}
+                    >
+                      Lihat
+                    </button>
                   </div>
                 </div>
               </div>
