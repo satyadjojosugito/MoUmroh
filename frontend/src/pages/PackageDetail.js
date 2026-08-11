@@ -4,9 +4,9 @@ import axios from 'axios';
 import { MapPin, Clock, Calendar, Building2, CheckCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import LoginModal from '../components/LoginModal';
-
+ 
 const API_URL = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
-
+ 
 export default function PackageDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -72,7 +72,7 @@ export default function PackageDetail() {
       </div>
     );
   }
-
+ 
   if (loading) {
     return (
       <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -80,7 +80,7 @@ export default function PackageDetail() {
       </div>
     );
   }
-
+ 
   if (!pkg) {
     return (
       <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -204,6 +204,36 @@ export default function PackageDetail() {
           {infoRow(Clock, 'Durasi', `${pkg.duration || '-'} Hari`)}
         </div>
  
+        {/* Airlines */}
+        {pkg.airlines && (
+          <div style={{ marginBottom: '28px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#000', marginBottom: '12px' }}>
+              Maskapai
+            </h2>
+            <p style={{ fontSize: '15px', color: '#444', margin: 0 }}>{pkg.airlines}</p>
+          </div>
+        )}
+ 
+        {/* Hotel */}
+        {pkg.hotel && (
+          <div style={{ marginBottom: '28px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#000', marginBottom: '12px' }}>
+              Hotel
+            </h2>
+            <p style={{ fontSize: '15px', color: '#444', margin: 0 }}>{pkg.hotel}</p>
+          </div>
+        )}
+ 
+        {/* Friday Count */}
+        {pkg.fridayCount && (
+          <div style={{ marginBottom: '28px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#000', marginBottom: '12px' }}>
+              Berapa Kali Jumat
+            </h2>
+            <p style={{ fontSize: '15px', color: '#444', margin: 0 }}>{pkg.fridayCount}x Jumat</p>
+          </div>
+        )}
+ 
         {/* Description */}
         {pkg.description && (
           <div style={{ marginBottom: '28px' }}>
@@ -227,6 +257,25 @@ export default function PackageDetail() {
                 <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                   <CheckCircle size={17} style={{ color: '#16a34a', flexShrink: 0, marginTop: '2px' }} />
                   <span style={{ fontSize: '14px', color: '#444' }}>
+                    {typeof item === 'string' ? item : item?.name || ''}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+ 
+        {/* Exclusions */}
+        {pkg.exclusions && Array.isArray(pkg.exclusions) && pkg.exclusions.length > 0 && (
+          <div style={{ marginBottom: '28px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#000', marginBottom: '12px' }}>
+              Tidak Termasuk
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px' }}>
+              {pkg.exclusions.map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                  <span style={{ fontSize: '16px', color: '#dc2626', flexShrink: 0 }}>✕</span>
+                  <span style={{ fontSize: '14px', color: '#555' }}>
                     {typeof item === 'string' ? item : item?.name || ''}
                   </span>
                 </div>
@@ -299,3 +348,4 @@ export default function PackageDetail() {
     </div>
   );
 }
+ 
