@@ -42,7 +42,7 @@ const getAgencyLabel = (value) => {
   const formatDateMonthYear = (dateString) => {
     if (!dateString) return '';
     const options = { year: 'numeric', month: 'long' };
-    return new Date(dateString).toLocaleDateString('en-US', options);
+    return new Date(dateString).toLocaleDateString('id-ID', options);
   };
 const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -237,7 +237,7 @@ const scrollRef = useRef(null);
                   </p>
 
                   <p style={{ fontSize: '13px', color: '#666', marginBottom: '10px' }}>
-                    📅 Bulan Keberangkatan: {formatDateMonthYear(pkg.departureDate)}
+                    📅 Berangkat: {formatDateMonthYear(pkg.departureDate)}
                   </p>
 
                   <div style={{
