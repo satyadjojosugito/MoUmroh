@@ -368,6 +368,57 @@ const scrollRef = useRef(null);
           </div>
         </div>
       </section>
+
+      {/* Contact CTA Section */}
+      <section style={{
+        backgroundColor: '#000',
+        padding: '60px 20px',
+        textAlign: 'center',
+        marginTop: '60px'
+      }}>
+        <div style={{
+          maxWidth: '600px',
+          margin: '0 auto'
+        }}>
+          <h2 style={{
+            fontSize: '32px',
+            fontWeight: '700',
+            marginBottom: '16px',
+            color: '#fff'
+          }}>
+            Punya Pertanyaan?
+          </h2>
+          <p style={{
+            fontSize: '16px',
+            color: '#ccc',
+            marginBottom: '32px'
+          }}>
+            Hubungi tim kami melalui WhatsApp untuk bantuan lebih lanjut
+          </p>
+          <a
+            href="https://wa.me/6282111909060?text=Halo%20saya%20tertarik%20dengan%20paket%20umroh%20MoUmroh"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-block',
+              padding: '14px 40px',
+              backgroundColor: '#25d366',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '16px',
+              fontWeight: '600',
+              textDecoration: 'none',
+              transition: 'background-color 0.3s'
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#20ba5a'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#25d366'}
+          >
+            💬 Hubungi Kami di WhatsApp
+          </a>
+        </div>
+      </section>
     </div>
   );
 }
