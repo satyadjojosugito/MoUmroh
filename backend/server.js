@@ -1,10 +1,13 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
- 
+
 const app = express();
 const PORT = process.env.PORT || 5000;
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
  
 // MongoDB Connection optimized for Vercel serverless
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -143,13 +146,113 @@ const agencySchema = new mongoose.Schema({
   phone: String,
   address: String,
 }, { timestamps: true });
- 
+
+// User Schema for authentication
+const userSchema = new mongoose.Schema({
+  phone: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
+});
+
 // Models
 const Package = mongoose.model('Package', packageSchema);
 const Agency = mongoose.model('Agency', agencySchema);
+const User = mongoose.model('User', userSchema);
  
+// ===== AUTH ENDPOINTS =====
+
+// Register new user
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { phone, password } = req.body;
+
+    if (!phone || !password) {
+      return res.status(400).json({ error: 'Phone and password required' });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ phone });
+    if (existingUser) {
+      return res.status(409).json({ error: 'Phone number already registered' });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
+    const newUser = new User({
+      phone,
+      password: hashedPassword,
+    });
+
+    const savedUser = await newUser.save();
+
+    // Generate JWT token
+    const token = jwt.sign({ userId: savedUser._id, phone: savedUser.phone }, JWT_SECRET, { expiresIn: '30d' });
+
+    res.status(201).json({
+      message: 'User registered successfully',
+      token,
+      user: { id: savedUser._id.toString(), phone: savedUser.phone },
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Login user
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { phone, password } = req.body;
+
+    if (!phone || !password) {
+      return res.status(400).json({ error: 'Phone and password required' });
+    }
+
+    // Find user
+    const user = await User.findOne({ phone });
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid phone or password' });
+    }
+
+    // Compare password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid phone or password' });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign({ userId: user._id, phone: user.phone }, JWT_SECRET, { expiresIn: '30d' });
+
+    res.json({
+      message: 'Login successful',
+      token,
+      user: { id: user._id.toString(), phone: user.phone },
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Verify token
+app.post('/api/auth/verify', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'Token required' });
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    res.json({ valid: true, user: { id: decoded.userId, phone: decoded.phone } });
+  } catch (error) {
+    res.status(401).json({ valid: false, error: 'Invalid token' });
+  }
+});
+
 // ===== PACKAGE ENDPOINTS =====
- 
+
 // Get all packages
 app.get('/api/packages', async (req, res) => {
   try {

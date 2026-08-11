@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { MapPin, Clock, Calendar, Building2, CheckCircle } from 'lucide-react';
- 
+import { useAuth } from '../context/AuthContext';
+import LoginModal from '../components/LoginModal';
+
 const API_URL = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
- 
+
 export default function PackageDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isAuthenticated, login } = useAuth();
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [pkg, setPkg] = useState(null);
   const [agencyMap, setAgencyMap] = useState({});
   const [loading, setLoading] = useState(true);
@@ -52,6 +56,24 @@ export default function PackageDetail() {
     return /^[a-f0-9]{24}$/i.test(value) ? '' : value;
   };
  
+  // Check authentication - if not logged in, show login modal
+  if (!isAuthenticated) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#fff' }}>
+        <LoginModal
+          isOpen={true}
+          onClose={() => navigate('/packages')}
+          onLoginSuccess={(user) => {
+            login(user, localStorage.getItem('authToken'));
+          }}
+        />
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p style={{ color: '#999', fontSize: '16px' }}>Silakan masuk untuk melihat detail paket...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -59,7 +81,7 @@ export default function PackageDetail() {
       </div>
     );
   }
- 
+
   if (!pkg) {
     return (
       <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
