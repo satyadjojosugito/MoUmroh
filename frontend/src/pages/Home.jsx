@@ -150,14 +150,6 @@ const getAgencyLabel = (value) => {
               onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
               onClick={() => navigate(`/package/${pkg.id}`)}
               >
-                <div style={{
-                  height: '160px',
-                  backgroundColor: '#e0e0e0',
-                  backgroundImage: pkg.image ? `url('${pkg.image}')` : 'none',
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }} />
-
                 <div style={{ padding: '16px' }}>
                   <h3 style={{
                     fontSize: '16px',
@@ -189,7 +181,7 @@ const getAgencyLabel = (value) => {
                   </p>
 
                   <p style={{ fontSize: '13px', color: '#666', marginBottom: '10px' }}>
-                    📅 Bulan: {formatDateMonthYear(pkg.departureDate)}
+                    📅 Bulan Keberangkatan: {formatDateMonthYear(pkg.departureDate)}
                   </p>
 
                   <div style={{

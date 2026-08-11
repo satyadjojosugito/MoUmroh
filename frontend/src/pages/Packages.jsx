@@ -354,15 +354,6 @@ export default function Packages() {
                   onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
                   onClick={() => navigate(`/package/${pkg.id}`)}
                   >
-                    {/* Image */}
-                    <div style={{
-                      height: '160px',
-                      backgroundColor: '#e0e0e0',
-                      backgroundImage: pkg.image ? `url('${pkg.image}')` : 'none',
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center'
-                    }} />
- 
                     {/* Content */}
                     <div style={{ padding: '16px' }}>
                       <h3 style={{
@@ -408,7 +399,7 @@ export default function Packages() {
                         color: '#666',
                         marginBottom: '10px'
                       }}>
-                        📅 Bulan: {formatDateMonthYear(pkg.departureDate)}
+                        📅 Bulan Keberangkatan: {formatDateMonthYear(pkg.departureDate)}
                       </p>
  
                       {/* Specs */}
