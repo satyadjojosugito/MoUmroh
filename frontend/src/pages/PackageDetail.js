@@ -11,7 +11,6 @@ export default function PackageDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated, login } = useAuth();
-  const [showLoginModal, setShowLoginModal] = useState(false);
   const [pkg, setPkg] = useState(null);
   const [agencyMap, setAgencyMap] = useState({});
   const [loading, setLoading] = useState(true);
