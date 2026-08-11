@@ -137,7 +137,11 @@ const packageSchema = new mongoose.Schema({
   image: String,
   description: String,
   agencies: String,
+  airlines: String,
+  hotel: String,
+  fridayCount: Number,
   inclusions: [String],
+  exclusions: [String],
   itinerary: [String],
 }, { timestamps: true });
  
