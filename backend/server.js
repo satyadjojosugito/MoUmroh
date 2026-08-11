@@ -94,9 +94,11 @@ app.use(async (req, res, next) => {
   }
 
 });
-// Require admin key for all write operations
+
+// Require admin key for all write operations (except auth endpoints)
 app.use((req, res, next) => {
-  if (req.method === 'GET' || req.method === 'OPTIONS') return next();
+  // Allow GET, OPTIONS, and auth endpoints
+  if (req.method === 'GET' || req.method === 'OPTIONS' || req.path.startsWith('/api/auth/')) return next();
 
   const secret = process.env.ADMIN_SECRET;
   if (!secret) {
