@@ -292,10 +292,11 @@ const scrollRef = useRef(null);
           </div>
         )}
         {/* View All Button & Contact */}
-        <div style={{ textAlign: 'center', marginTop: '40px', display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+        <div style={{ textAlign: 'center', marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '12px', justifyContent: 'center', alignItems: 'center', maxWidth: '400px', margin: '40px auto 0' }}>
           <button
             onClick={() => navigate('/packages')}
             style={{
+              width: '100%',
               padding: '14px 40px',
               backgroundColor: '#fff',
               color: '#000',
@@ -303,7 +304,8 @@ const scrollRef = useRef(null);
               borderRadius: '8px',
               cursor: 'pointer',
               fontSize: '16px',
-              fontWeight: '600'
+              fontWeight: '600',
+              boxSizing: 'border-box'
             }}
           >
             Lihat Semua Paket →
@@ -313,7 +315,8 @@ const scrollRef = useRef(null);
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              display: 'inline-block',
+              display: 'block',
+              width: '100%',
               padding: '14px 40px',
               backgroundColor: '#25d366',
               color: '#fff',
@@ -323,7 +326,8 @@ const scrollRef = useRef(null);
               fontSize: '16px',
               fontWeight: '600',
               textDecoration: 'none',
-              transition: 'background-color 0.3s'
+              transition: 'background-color 0.3s',
+              boxSizing: 'border-box'
             }}
             onMouseEnter={(e) => e.target.style.backgroundColor = '#20ba5a'}
             onMouseLeave={(e) => e.target.style.backgroundColor = '#25d366'}
