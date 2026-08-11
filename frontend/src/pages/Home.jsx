@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 const API_URL = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
@@ -44,7 +44,44 @@ const getAgencyLabel = (value) => {
     const options = { year: 'numeric', month: 'long' };
     return new Date(dateString).toLocaleDateString('en-US', options);
   };
+const scrollRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
+  const updateArrows = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 5);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 5);
+  };
+
+  useEffect(() => {
+    updateArrows();
+    window.addEventListener('resize', updateArrows);
+    return () => window.removeEventListener('resize', updateArrows);
+  }, [packages]);
+
+  const scrollByCards = (direction) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: direction * 295, behavior: 'smooth' });
+  };
+  const arrowStyle = (side) => ({
+    position: 'absolute',
+    top: '50%',
+    [side]: '-18px',
+    transform: 'translateY(-50%)',
+    width: '36px',
+    height: '36px',
+    borderRadius: '50%',
+    border: '1px solid #e0e0e0',
+    backgroundColor: '#fff',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+    cursor: 'pointer',
+    fontSize: '16px',
+    lineHeight: '1',
+    zIndex: 2,
+  });
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#ffffff' }}>
       {/* Hero Section */}
@@ -132,7 +169,21 @@ const getAgencyLabel = (value) => {
         {loading ? (
           <p style={{ textAlign: 'center', color: '#999' }}>Memuat paket...</p>
         ) : (
-          <div style={{
+          <div style={{ position: 'relative' }}>
+            {canScrollLeft && (
+              <button onClick={() => scrollByCards(-1)} style={arrowStyle('left')} aria-label="Sebelumnya">
+                ←
+              </button>
+            )}
+            {canScrollRight && (
+              <button onClick={() => scrollByCards(1)} style={arrowStyle('right')} aria-label="Berikutnya">
+                →
+              </button>
+            )}
+          <div
+            ref={scrollRef}
+            onScroll={updateArrows}
+            style={{
             display: 'flex',
             gap: '20px',
             overflowX: 'auto',
@@ -237,6 +288,7 @@ const getAgencyLabel = (value) => {
                 </div>
               </div>
             ))}
+          </div>
           </div>
         )}
         {/* View All Button */}
