@@ -1,33 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const AdminPanel = () => {
+const API_URL = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
+const ADMIN_SECRET = process.env.REACT_APP_ADMIN_SECRET || '';
+
+export default function AdminPanel() {
+  // Packages
   const [packages, setPackages] = useState([]);
   const [agencies, setAgencies] = useState([]);
-  const [formData, setFormData] = useState({
+  const [formMode, setFormMode] = useState('packages'); // 'packages' or 'agencies'
+
+  // Package form state
+  const [packageForm, setPackageForm] = useState({
     name: '',
     destination: '',
     price: '',
     duration: '',
     departureCity: '',
     departureDate: '',
-    imageUrl: '',
+    rating: '5',
+    image: '',
     description: '',
-    agencyId: '',
+    agencies: '',
+    airlines: '',
+    hotel: '',
+    fridayCount: '',
+    inclusions: [],
+    exclusions: [],
   });
-  const [agencyFormData, setAgencyFormData] = useState({
+  const [editingPackageId, setEditingPackageId] = useState(null);
+
+  // Agency form state
+  const [agencyForm, setAgencyForm] = useState({
     name: '',
     email: '',
     phone: '',
     address: '',
   });
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [showAddForm, setShowAddForm] = useState(true);
-  const [editingId, setEditingId] = useState(null);
-  const [adminKey, setAdminKey] = useState(() => sessionStorage.getItem('adminKey') || '');
+  const [editingAgencyId, setEditingAgencyId] = useState(null);
 
-  // Fetch packages on mount
+  // Inclusions/Exclusions input
+  const [inclusionInput, setInclusionInput] = useState('');
+  const [exclusionInput, setExclusionInput] = useState('');
+
+  // Fetch data
   useEffect(() => {
     fetchPackages();
     fetchAgencies();
@@ -35,9 +51,8 @@ const AdminPanel = () => {
 
   const fetchPackages = async () => {
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
-      const response = await axios.get(`${apiUrl}/packages`);
-      setPackages(response.data);
+      const res = await axios.get(`${API_URL}/packages`);
+      setPackages(res.data);
     } catch (error) {
       console.error('Error fetching packages:', error);
     }
@@ -45,793 +60,450 @@ const AdminPanel = () => {
 
   const fetchAgencies = async () => {
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
-      const response = await axios.get(`${apiUrl}/agencies`);
-      setAgencies(response.data);
-      console.log('Agencies loaded:', response.data);
+      const res = await axios.get(`${API_URL}/agencies`);
+      setAgencies(res.data);
     } catch (error) {
       console.error('Error fetching agencies:', error);
-      setAgencies([]);
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+  // Helper to get agency name by ID
+  const getAgencyName = (agencyId) => {
+    if (!agencyId) return 'Belum ditentukan';
+    const agency = agencies.find(a => a.id === agencyId || a.id === String(agencyId));
+    return agency?.name || 'Belum ditentukan';
   };
 
-  const handleAgencyInputChange = (e) => {
+  // Package handlers
+  const handlePackageChange = (e) => {
     const { name, value } = e.target;
-    setAgencyFormData({
-      ...agencyFormData,
-      [name]: value,
-    });
+    setPackageForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const authHeader = () => ({ headers: { 'x-admin-key': adminKey } });
-  const handleAddPackage = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage('');
+  const handleAddInclusion = () => {
+    if (inclusionInput.trim()) {
+      setPackageForm(prev => ({
+        ...prev,
+        inclusions: [...prev.inclusions, inclusionInput.trim()]
+      }));
+      setInclusionInput('');
+    }
+  };
+
+  const handleRemoveInclusion = (idx) => {
+    setPackageForm(prev => ({
+      ...prev,
+      inclusions: prev.inclusions.filter((_, i) => i !== idx)
+    }));
+  };
+
+  const handleAddExclusion = () => {
+    if (exclusionInput.trim()) {
+      setPackageForm(prev => ({
+        ...prev,
+        exclusions: [...prev.exclusions, exclusionInput.trim()]
+      }));
+      setExclusionInput('');
+    }
+  };
+
+  const handleRemoveExclusion = (idx) => {
+    setPackageForm(prev => ({
+      ...prev,
+      exclusions: prev.exclusions.filter((_, i) => i !== idx)
+    }));
+  };
+
+  const handleSavePackage = async () => {
+    const requiredFields = ['name', 'destination', 'price', 'duration', 'departureCity', 'departureDate'];
+    const missing = requiredFields.filter(f => !packageForm[f]);
+    if (missing.length > 0) {
+      alert('Required fields missing: ' + missing.join(', '));
+      return;
+    }
 
     try {
-      // Validate required fields
-      if (
-        !formData.name ||
-        !formData.destination ||
-        !formData.price ||
-        !formData.duration ||
-        !formData.departureCity ||
-        !formData.departureDate ||
-        !formData.agencyId
-      ) {
-        setMessage('❌ Please fill in all required fields (including Agency)');
-        setLoading(false);
-        return;
-      }
-
-      // Get selected agency - with better error handling
-      const agencyIdToFind = formData.agencyId;
-      console.log('Looking for agency ID:', agencyIdToFind);
-      console.log('Available agencies:', agencies);
-
-      const selectedAgency = agencies.find(a => {
-        console.log('Comparing:', a.id, 'with', agencyIdToFind, 'as strings:', a.id.toString(), agencyIdToFind.toString());
-        return a.id.toString() === agencyIdToFind.toString();
-      });
-
-      if (!selectedAgency) {
-        setMessage('❌ Selected agency not found. Please select a valid agency.');
-        setLoading(false);
-        return;
-      }
-
-      console.log('Selected agency:', selectedAgency);
-
-      // Create new package object - agencies should be just the ID as a string
-      const newPackage = {
-        name: formData.name,
-        destination: formData.destination,
-        price: parseInt(formData.price),
-        duration: parseInt(formData.duration),
-        departureCity: formData.departureCity,
-        departureDate: formData.departureDate,
-        image: formData.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image',
-        description: formData.description,
-        rating: 5,
-        agencies: selectedAgency.id.toString(),
+      const payload = {
+        name: packageForm.name,
+        destination: packageForm.destination,
+        price: parseInt(packageForm.price),
+        duration: parseInt(packageForm.duration),
+        departureCity: packageForm.departureCity,
+        departureDate: packageForm.departureDate,
+        rating: parseInt(packageForm.rating) || 5,
+        image: packageForm.image || 'https://via.placeholder.com/400x300?text=No+Image',
+        description: packageForm.description,
+        agencies: packageForm.agencies || null,
+        airlines: packageForm.airlines || '',
+        hotel: packageForm.hotel || '',
+        fridayCount: packageForm.fridayCount ? parseInt(packageForm.fridayCount) : null,
+        inclusions: packageForm.inclusions,
+        exclusions: packageForm.exclusions,
       };
 
-      console.log('Package to send:', newPackage);
-
-      // Send to backend
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
-      if (editingId) {
-        // Update existing package - Use PUT
-        console.log('Updating package:', editingId);
-        const response = await axios.put(`${apiUrl}/packages/${editingId}`, newPackage, authHeader());
-        setPackages(packages.map(pkg => pkg.id === editingId ? response.data : pkg));
-        setMessage('✅ Package updated successfully!');
-        setEditingId(null);
+      if (editingPackageId) {
+        // Update
+        await axios.put(`${API_URL}/packages/${editingPackageId}`, payload, {
+          headers: { 'x-admin-key': ADMIN_SECRET }
+        });
+        alert('Package updated successfully!');
       } else {
-        // Add new package
-        console.log('Creating new package');
-        const response = await axios.post(`${apiUrl}/packages`, newPackage, authHeader());
-        console.log('Response from server:', response.data);
-        setPackages([...packages, response.data]);
-        setMessage('✅ Package added successfully!');
+        // Create
+        await axios.post(`${API_URL}/packages`, payload, {
+          headers: { 'x-admin-key': ADMIN_SECRET }
+        });
+        alert('Package created successfully!');
       }
 
-      // Clear form
-      setFormData({
-        name: '',
-        destination: '',
-        price: '',
-        duration: '',
-        departureCity: '',
-        departureDate: '',
-        imageUrl: '',
-        description: '',
-        agencyId: '',
-      });
-
-      setTimeout(() => setMessage(''), 3000);
+      resetPackageForm();
+      fetchPackages();
     } catch (error) {
-      console.error('Full error:', error);
-      console.error('Error response:', error.response?.data);
-      setMessage(`❌ Error: ${error.response?.data?.error || error.message || 'Error saving package'}`);
-    } finally {
-      setLoading(false);
+      console.error('Error saving package:', error);
+      alert('Error: ' + (error.response?.data?.error || error.message));
     }
   };
 
-const handleEditPackage = (pkg) => {
-  setEditingId(pkg.id);
-  // Match agency name to ID, or use as-is if it's already an ID
-  const agencyIdToSet = agencies.find(a => a.name === pkg.agencies)?.id || pkg.agencies || '';
-  setFormData({
-    name: pkg.name,
-    destination: pkg.destination,
-    price: pkg.price,
-    duration: pkg.duration,
-    departureCity: pkg.departureCity,
-    departureDate: pkg.departureDate,
-    imageUrl: pkg.image,
-    description: pkg.description,
-    agencyId: agencyIdToSet,
-  });
-  setShowAddForm(true);
-};
+  const handleEditPackage = (pkg) => {
+    setPackageForm({
+      name: pkg.name,
+      destination: pkg.destination,
+      price: pkg.price,
+      duration: pkg.duration,
+      departureCity: pkg.departureCity,
+      departureDate: pkg.departureDate,
+      rating: pkg.rating || 5,
+      image: pkg.image,
+      description: pkg.description,
+      agencies: pkg.agencies || '',
+      airlines: pkg.airlines || '',
+      hotel: pkg.hotel || '',
+      fridayCount: pkg.fridayCount || '',
+      inclusions: Array.isArray(pkg.inclusions) ? pkg.inclusions : [],
+      exclusions: Array.isArray(pkg.exclusions) ? pkg.exclusions : [],
+    });
+    setEditingPackageId(pkg.id);
+    window.scrollTo(0, 0);
+  };
 
-  const handleCancelEdit = () => {
-    setEditingId(null);
-    setFormData({
+  const handleDeletePackage = async (id) => {
+    if (!window.confirm('Are you sure?')) return;
+    try {
+      await axios.delete(`${API_URL}/packages/${id}`, {
+        headers: { 'x-admin-key': ADMIN_SECRET }
+      });
+      alert('Package deleted!');
+      fetchPackages();
+    } catch (error) {
+      alert('Error deleting package: ' + error.message);
+    }
+  };
+
+  const resetPackageForm = () => {
+    setPackageForm({
       name: '',
       destination: '',
       price: '',
       duration: '',
       departureCity: '',
       departureDate: '',
-      imageUrl: '',
+      rating: '5',
+      image: '',
       description: '',
-      agencyId: '',
+      agencies: '',
+      airlines: '',
+      hotel: '',
+      fridayCount: '',
+      inclusions: [],
+      exclusions: [],
     });
+    setEditingPackageId(null);
+    setInclusionInput('');
+    setExclusionInput('');
   };
 
-  const handleAddAgency = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage('');
+  // Agency handlers
+  const handleAgencyChange = (e) => {
+    const { name, value } = e.target;
+    setAgencyForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSaveAgency = async () => {
+    const requiredFields = ['name', 'email', 'phone'];
+    const missing = requiredFields.filter(f => !agencyForm[f]);
+    if (missing.length > 0) {
+      alert('Required fields missing: ' + missing.join(', '));
+      return;
+    }
 
     try {
-      if (!agencyFormData.name || !agencyFormData.email || !agencyFormData.phone) {
-        setMessage('❌ Please fill in all required fields');
-        setLoading(false);
-        return;
+      if (editingAgencyId) {
+        await axios.put(`${API_URL}/agencies/${editingAgencyId}`, agencyForm, {
+          headers: { 'x-admin-key': ADMIN_SECRET }
+        });
+        alert('Agency updated!');
+      } else {
+        await axios.post(`${API_URL}/agencies`, agencyForm, {
+          headers: { 'x-admin-key': ADMIN_SECRET }
+        });
+        alert('Agency created!');
       }
-
-      const newAgency = {
-        name: agencyFormData.name,
-        email: agencyFormData.email,
-        phone: agencyFormData.phone,
-        address: agencyFormData.address,
-      };
-
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
-      await axios.post(`${apiUrl}/agencies`, newAgency, authHeader());
-
-      // Refresh agencies list
-      await fetchAgencies();
-
-      setAgencyFormData({
-        name: '',
-        email: '',
-        phone: '',
-        address: '',
-      });
-
-      setMessage('✅ Agency added successfully!');
-      setTimeout(() => setMessage(''), 3000);
+      resetAgencyForm();
+      fetchAgencies();
     } catch (error) {
-      setMessage('❌ Error adding agency');
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
+      alert('Error: ' + (error.response?.data?.error || error.message));
     }
   };
 
-  const handleDeletePackage = async (id) => {
-    if (window.confirm('Are you sure you want to delete this package?')) {
-      try {
-        const apiUrl = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
-        await axios.delete(`${apiUrl}/packages/${id}`, authHeader());
-        setPackages(packages.filter(pkg => pkg.id !== id));
-        setMessage('✅ Package deleted successfully!');
-        setTimeout(() => setMessage(''), 3000);
-      } catch (error) {
-        setMessage('❌ Error deleting package');
-        console.error('Error:', error);
-      }
-    }
+  const handleEditAgency = (agency) => {
+    setAgencyForm({
+      name: agency.name,
+      email: agency.email,
+      phone: agency.phone,
+      address: agency.address || '',
+    });
+    setEditingAgencyId(agency.id);
   };
 
   const handleDeleteAgency = async (id) => {
-    if (window.confirm('Are you sure you want to delete this agency?')) {
-      try {
-        const apiUrl = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
-        await axios.delete(`${apiUrl}/agencies/${id}`, authHeader());
-        setAgencies(agencies.filter(agency => agency.id !== id));
-        setMessage('✅ Agency deleted successfully!');
-        setTimeout(() => setMessage(''), 3000);
-      } catch (error) {
-        setMessage('❌ Error deleting agency');
-        console.error('Error:', error);
-      }
+    if (!window.confirm('Are you sure?')) return;
+    try {
+      await axios.delete(`${API_URL}/agencies/${id}`, {
+        headers: { 'x-admin-key': ADMIN_SECRET }
+      });
+      alert('Agency deleted!');
+      fetchAgencies();
+    } catch (error) {
+      alert('Error: ' + error.message);
     }
   };
 
-  const formatDateMonthYear = (dateString) => {
-    if (!dateString) return '';
-    const options = { year: 'numeric', month: 'long' };
-    return new Date(dateString).toLocaleDateString('en-US', options);
+  const resetAgencyForm = () => {
+    setAgencyForm({ name: '', email: '', phone: '', address: '' });
+    setEditingAgencyId(null);
   };
 
-  const formatCurrency = (amount) => {
-    return `Rp${amount?.toLocaleString('id-ID') || '0'}`;
-  };
+  // Styles
+  const containerStyle = { maxWidth: '1000px', margin: '0 auto', padding: '20px' };
+  const sectionStyle = { marginBottom: '30px', padding: '20px', border: '1px solid #ddd', borderRadius: '8px' };
+  const inputStyle = { width: '100%', padding: '10px', marginBottom: '10px', border: '1px solid #ccc', borderRadius: '4px', boxSizing: 'border-box' };
+  const buttonStyle = { padding: '10px 20px', backgroundColor: '#000', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginRight: '10px' };
+  const tabStyle = { padding: '10px 20px', marginRight: '10px', backgroundColor: '#f0f0f0', border: 'none', cursor: 'pointer', borderRadius: '4px' };
+  const activeTabStyle = { ...tabStyle, backgroundColor: '#000', color: '#fff' };
 
-  const getAgencyName = (agencyId) => {
-    if (!agencyId) return 'Belum ditentukan';
-    const agency = agencies.find(a => a.id.toString() === agencyId.toString());
-    return agency?.name || 'Belum ditentukan';
-  };
-
-  if (!adminKey) {
-    return (
-      <div style={{ maxWidth: '400px', margin: '80px auto', padding: '24px', textAlign: 'center' }}>
-        <h2 style={{ marginBottom: '16px' }}>Admin Access</h2>
-        <input
-          type="password"
-          placeholder="Admin key"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              sessionStorage.setItem('adminKey', e.target.value);
-              setAdminKey(e.target.value);
-            }
-          }}
-          style={{ width: '100%', padding: '10px', marginBottom: '12px' }}
-        />
-        <p style={{ fontSize: '12px', color: '#999' }}>Press Enter to continue</p>
-      </div>
-    );
-  }
-  
   return (
-    <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
-        <h1 style={styles.title}>📊 MoUmroh Admin Panel</h1>
-        <div style={styles.buttons}>
-          <button
-            style={{...styles.tab, ...(showAddForm ? styles.tabActive : {})}}
-            onClick={() => setShowAddForm(true)}
-          >
-            ➕ Add Packages
-          </button>
-          <button
-            style={{...styles.tab, ...(!showAddForm ? styles.tabActive : {})}}
-            onClick={() => setShowAddForm(false)}
-          >
-            🏢 Add Agencies
-          </button>
-        </div>
+    <div style={containerStyle}>
+      <h1 style={{ marginBottom: '30px' }}>📊 Admin Panel</h1>
+
+      {/* Tabs */}
+      <div style={{ marginBottom: '20px' }}>
+        <button
+          style={formMode === 'packages' ? activeTabStyle : tabStyle}
+          onClick={() => { setFormMode('packages'); resetPackageForm(); }}
+        >
+          📦 Packages
+        </button>
+        <button
+          style={formMode === 'agencies' ? activeTabStyle : tabStyle}
+          onClick={() => { setFormMode('agencies'); resetAgencyForm(); }}
+        >
+          🏢 Agencies
+        </button>
       </div>
 
-      {/* Message */}
-      {message && (
-        <div style={{
-          ...styles.message,
-          backgroundColor: message.includes('✅') ? '#d4edda' : '#f8d7da',
-          color: message.includes('✅') ? '#155724' : '#721c24',
-          border: message.includes('✅') ? '1px solid #c3e6cb' : '1px solid #f5c6cb',
-        }}>
-          {message}
+      {/* PACKAGES SECTION */}
+      {formMode === 'packages' && (
+        <div>
+          {/* Package Form */}
+          <div style={sectionStyle}>
+            <h2>{editingPackageId ? 'Edit Package' : 'Add New Package'}</h2>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <input type="text" name="name" placeholder="Package Name" value={packageForm.name} onChange={handlePackageChange} style={inputStyle} />
+              <input type="text" name="destination" placeholder="Destination" value={packageForm.destination} onChange={handlePackageChange} style={inputStyle} />
+              <input type="number" name="price" placeholder="Price (Rp)" value={packageForm.price} onChange={handlePackageChange} style={inputStyle} />
+              <input type="number" name="duration" placeholder="Duration (Days)" value={packageForm.duration} onChange={handlePackageChange} style={inputStyle} />
+              <input type="text" name="departureCity" placeholder="Departure City" value={packageForm.departureCity} onChange={handlePackageChange} style={inputStyle} />
+              <input type="date" name="departureDate" value={packageForm.departureDate} onChange={handlePackageChange} style={inputStyle} />
+              <input type="number" name="rating" placeholder="Rating (1-5)" value={packageForm.rating} onChange={handlePackageChange} style={inputStyle} />
+              <select name="agencies" value={packageForm.agencies} onChange={handlePackageChange} style={inputStyle}>
+                <option value="">-- Select Agency --</option>
+                {agencies.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <textarea name="description" placeholder="Description" value={packageForm.description} onChange={handlePackageChange} style={{ ...inputStyle, minHeight: '100px' }} />
+            <input type="text" name="image" placeholder="Image URL" value={packageForm.image} onChange={handlePackageChange} style={inputStyle} />
+
+            {/* New Fields */}
+            <h3 style={{ marginTop: '20px', color: '#0066cc' }}>Additional Details</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <input type="text" name="airlines" placeholder="Airlines (e.g., Garuda Indonesia)" value={packageForm.airlines} onChange={handlePackageChange} style={inputStyle} />
+              <input type="text" name="hotel" placeholder="Hotel Name" value={packageForm.hotel} onChange={handlePackageChange} style={inputStyle} />
+              <input type="number" name="fridayCount" placeholder="Friday Count (e.g., 5)" value={packageForm.fridayCount} onChange={handlePackageChange} style={inputStyle} />
+            </div>
+
+            {/* Inclusions */}
+            <h3 style={{ marginTop: '20px' }}>What's Included (Yang Termasuk)</h3>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+              <input
+                type="text"
+                placeholder="Add inclusion item"
+                value={inclusionInput}
+                onChange={(e) => setInclusionInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAddInclusion()}
+                style={{ ...inputStyle, marginBottom: 0, flex: 1 }}
+              />
+              <button onClick={handleAddInclusion} style={buttonStyle}>Add</button>
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              {packageForm.inclusions.map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', backgroundColor: '#f9f9f9', marginBottom: '5px', borderRadius: '4px' }}>
+                  <span>✓ {item}</span>
+                  <button onClick={() => handleRemoveInclusion(idx)} style={{ backgroundColor: '#dc2626', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer' }}>Remove</button>
+                </div>
+              ))}
+            </div>
+
+            {/* Exclusions */}
+            <h3 style={{ marginTop: '20px' }}>What's Not Included (Tidak Termasuk)</h3>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+              <input
+                type="text"
+                placeholder="Add exclusion item"
+                value={exclusionInput}
+                onChange={(e) => setExclusionInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAddExclusion()}
+                style={{ ...inputStyle, marginBottom: 0, flex: 1 }}
+              />
+              <button onClick={handleAddExclusion} style={buttonStyle}>Add</button>
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              {packageForm.exclusions.map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', backgroundColor: '#fef2f2', marginBottom: '5px', borderRadius: '4px' }}>
+                  <span>✕ {item}</span>
+                  <button onClick={() => handleRemoveExclusion(idx)} style={{ backgroundColor: '#dc2626', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer' }}>Remove</button>
+                </div>
+              ))}
+            </div>
+
+            {/* Buttons */}
+            <div>
+              <button onClick={handleSavePackage} style={buttonStyle}>
+                {editingPackageId ? 'Update Package' : 'Create Package'}
+              </button>
+              {editingPackageId && (
+                <button onClick={resetPackageForm} style={{ ...buttonStyle, backgroundColor: '#666' }}>Cancel</button>
+              )}
+            </div>
+          </div>
+
+          {/* Packages List */}
+          <div style={sectionStyle}>
+            <h2>Packages ({packages.length})</h2>
+            {packages.length === 0 ? (
+              <p>No packages yet.</p>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#f0f0f0' }}>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Name</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Destination</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Price</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Duration</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Agency</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Airline</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Hotel</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {packages.map(pkg => (
+                      <tr key={pkg.id} style={{ borderBottom: '1px solid #ddd' }}>
+                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{pkg.name}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{pkg.destination}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>Rp{pkg.price?.toLocaleString('id-ID')}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{pkg.duration} days</td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{getAgencyName(pkg.agencies)}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{pkg.airlines || '-'}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{pkg.hotel || '-'}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>
+                          <button onClick={() => handleEditPackage(pkg)} style={{ ...buttonStyle, marginRight: '5px', padding: '5px 10px', fontSize: '12px' }}>Edit</button>
+                          <button onClick={() => handleDeletePackage(pkg.id)} style={{ backgroundColor: '#dc2626', color: '#fff', border: 'none', borderRadius: '4px', padding: '5px 10px', cursor: 'pointer', fontSize: '12px' }}>Delete</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Main Container */}
-      <div style={styles.mainContainer}>
-        {/* Left Column - Add Package Form */}
-        {showAddForm && (
-          <div style={styles.formSection}>
-            <h2 style={styles.formTitle}>{editingId ? '✏️ Edit Package' : '➕ Add New Package'}</h2>
-            {editingId && (
-              <button
-                onClick={handleCancelEdit}
-                style={{
-                  ...styles.submitBtn,
-                  backgroundColor: '#6c757d',
-                  marginBottom: '16px'
-                }}
-              >
-                Cancel Edit
-              </button>
+      {/* AGENCIES SECTION */}
+      {formMode === 'agencies' && (
+        <div>
+          {/* Agency Form */}
+          <div style={sectionStyle}>
+            <h2>{editingAgencyId ? 'Edit Agency' : 'Add New Agency'}</h2>
+
+            <input type="text" name="name" placeholder="Agency Name" value={agencyForm.name} onChange={handleAgencyChange} style={inputStyle} />
+            <input type="email" name="email" placeholder="Email" value={agencyForm.email} onChange={handleAgencyChange} style={inputStyle} />
+            <input type="text" name="phone" placeholder="Phone Number" value={agencyForm.phone} onChange={handleAgencyChange} style={inputStyle} />
+            <input type="text" name="address" placeholder="Address" value={agencyForm.address} onChange={handleAgencyChange} style={inputStyle} />
+
+            <button onClick={handleSaveAgency} style={buttonStyle}>
+              {editingAgencyId ? 'Update Agency' : 'Create Agency'}
+            </button>
+            {editingAgencyId && (
+              <button onClick={resetAgencyForm} style={{ ...buttonStyle, backgroundColor: '#666' }}>Cancel</button>
             )}
+          </div>
 
-            <form onSubmit={handleAddPackage} style={styles.form}>
-              {/* Agency Selection */}
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Select Agency *</label>
-                <select
-                  name="agencyId"
-                  value={formData.agencyId}
-                  onChange={handleInputChange}
-                  style={styles.input}
-                  required
-                >
-                  <option value="">-- Choose an Agency --</option>
+          {/* Agencies List */}
+          <div style={sectionStyle}>
+            <h2>Agencies ({agencies.length})</h2>
+            {agencies.length === 0 ? (
+              <p>No agencies yet.</p>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f0f0f0' }}>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Name</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Email</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Phone</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Address</th>
+                    <th style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'left' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
                   {agencies.map(agency => (
-                    <option key={agency.id} value={agency.id}>
-                      {agency.name}
-                    </option>
+                    <tr key={agency.id} style={{ borderBottom: '1px solid #ddd' }}>
+                      <td style={{ border: '1px solid #ddd', padding: '8px' }}>{agency.name}</td>
+                      <td style={{ border: '1px solid #ddd', padding: '8px' }}>{agency.email}</td>
+                      <td style={{ border: '1px solid #ddd', padding: '8px' }}>{agency.phone}</td>
+                      <td style={{ border: '1px solid #ddd', padding: '8px' }}>{agency.address || '-'}</td>
+                      <td style={{ border: '1px solid #ddd', padding: '8px' }}>
+                        <button onClick={() => handleEditAgency(agency)} style={{ ...buttonStyle, marginRight: '5px', padding: '5px 10px', fontSize: '12px' }}>Edit</button>
+                        <button onClick={() => handleDeleteAgency(agency.id)} style={{ backgroundColor: '#dc2626', color: '#fff', border: 'none', borderRadius: '4px', padding: '5px 10px', cursor: 'pointer', fontSize: '12px' }}>Delete</button>
+                      </td>
+                    </tr>
                   ))}
-                </select>
-              </div>
-
-              {/* Package Name */}
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Package Name *</label>
-                <input
-                  type="text"
-                  name="name"
-                  placeholder="e.g., Premium 10-Day Umroh"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  style={styles.input}
-                  required
-                />
-              </div>
-
-              {/* Destination */}
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Destination *</label>
-                <input
-                  type="text"
-                  name="destination"
-                  placeholder="e.g., Mecca & Medina"
-                  value={formData.destination}
-                  onChange={handleInputChange}
-                  style={styles.input}
-                  required
-                />
-              </div>
-
-              {/* Price */}
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Price (IDR) *</label>
-                <input
-                  type="number"
-                  name="price"
-                  placeholder="2500000"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  style={styles.input}
-                  min="0"
-                  step="1"
-                  required
-                />
-              </div>
-
-              {/* Duration */}
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Duration (Days) *</label>
-                <input
-                  type="number"
-                  name="duration"
-                  placeholder="10"
-                  value={formData.duration}
-                  onChange={handleInputChange}
-                  style={styles.input}
-                  required
-                />
-              </div>
-
-              {/* Departure City */}
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Departure City *</label>
-                <input
-                  type="text"
-                  name="departureCity"
-                  placeholder="e.g., Jakarta"
-                  value={formData.departureCity}
-                  onChange={handleInputChange}
-                  style={styles.input}
-                  required
-                />
-              </div>
-
-              {/* Departure Date */}
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Departure Date *</label>
-                <input
-                  type="date"
-                  name="departureDate"
-                  value={formData.departureDate}
-                  onChange={handleInputChange}
-                  style={styles.input}
-                  required
-                />
-              </div>
-
-              {/* Image URL */}
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Image URL</label>
-                <input
-                  type="url"
-                  name="imageUrl"
-                  placeholder="https://example.com/image.jpg"
-                  value={formData.imageUrl}
-                  onChange={handleInputChange}
-                  style={styles.input}
-                />
-              </div>
-
-              {/* Description */}
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Description</label>
-                <textarea
-                  name="description"
-                  placeholder="Package description..."
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  style={{...styles.input, minHeight: '100px', fontFamily: 'inherit'}}
-                  rows="4"
-                />
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                style={{...styles.submitBtn, opacity: loading ? 0.6 : 1}}
-              >
-                {loading ? '⏳ Saving...' : (editingId ? '💾 Update Package' : '➕ Add Package')}
-              </button>
-            </form>
+                </tbody>
+              </table>
+            )}
           </div>
-        )}
-
-        {/* Left Column - Add Agency Form */}
-        {!showAddForm && (
-          <div style={styles.formSection}>
-            <h2 style={styles.formTitle}>Add New Agency</h2>
-
-            <form onSubmit={handleAddAgency} style={styles.form}>
-              {/* Agency Name */}
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Agency Name *</label>
-                <input
-                  type="text"
-                  name="name"
-                  placeholder="e.g., PT Umroh Indah"
-                  value={agencyFormData.name}
-                  onChange={handleAgencyInputChange}
-                  style={styles.input}
-                  required
-                />
-              </div>
-
-              {/* Email */}
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Email *</label>
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="contact@agency.com"
-                  value={agencyFormData.email}
-                  onChange={handleAgencyInputChange}
-                  style={styles.input}
-                  required
-                />
-              </div>
-
-              {/* Phone */}
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Phone *</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  placeholder="08123456789"
-                  value={agencyFormData.phone}
-                  onChange={handleAgencyInputChange}
-                  style={styles.input}
-                  required
-                />
-              </div>
-
-              {/* Address */}
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Address</label>
-                <textarea
-                  name="address"
-                  placeholder="Agency address..."
-                  value={agencyFormData.address}
-                  onChange={handleAgencyInputChange}
-                  style={{...styles.input, minHeight: '80px', fontFamily: 'inherit'}}
-                  rows="3"
-                />
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                style={{...styles.submitBtn, opacity: loading ? 0.6 : 1}}
-              >
-                {loading ? '⏳ Adding...' : '🏢 Add Agency'}
-              </button>
-            </form>
-          </div>
-        )}
-
-        {/* Right Column - Current Packages */}
-        {showAddForm && (
-          <div style={styles.packagesSection}>
-            <h2 style={styles.packagesTitle}>Current Packages ({packages.length})</h2>
-
-            <div style={styles.packagesList}>
-              {packages.length === 0 ? (
-                <p style={styles.emptyMessage}>No packages yet. Add one to get started!</p>
-              ) : (
-                packages.map(pkg => (
-                  <div key={pkg.id} style={styles.packageCard}>
-                    <h3 style={styles.packageName}>{pkg.name}</h3>
-
-                    <p style={styles.packageInfo}>
-                      <strong>Destination:</strong> {pkg.destination}
-                    </p>
-
-                    <p style={styles.packageInfo}>
-                      <strong>Price:</strong> {formatCurrency(pkg.price)} | <strong>Days:</strong> {pkg.duration}
-                    </p>
-
-                    <p style={styles.packageInfo}>
-                      <strong>📍 Departs:</strong> {pkg.departureCity}
-                    </p>
-
-                    <p style={styles.packageInfo}>
-                      <strong>📅 Date:</strong> {formatDateMonthYear(pkg.departureDate)}
-                    </p>
-
-                    <p style={styles.packageInfo}>
-                      <strong>🏢 Agency:</strong> {getAgencyName(pkg.agencies)}
-                    </p>
-
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        onClick={() => handleEditPackage(pkg)}
-                        style={{
-                          ...styles.deleteBtn,
-                          backgroundColor: '#007bff',
-                          flex: 1
-                        }}
-                      >
-                        ✏️ Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeletePackage(pkg.id)}
-                        style={{
-                          ...styles.deleteBtn,
-                          flex: 1
-                        }}
-                      >
-                        🗑️ Delete
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Right Column - Current Agencies */}
-        {!showAddForm && (
-          <div style={styles.packagesSection}>
-            <h2 style={styles.packagesTitle}>Current Agencies ({agencies.length})</h2>
-
-            <div style={styles.packagesList}>
-              {agencies.length === 0 ? (
-                <p style={styles.emptyMessage}>No agencies yet. Add one to get started!</p>
-              ) : (
-                agencies.map(agency => (
-                  <div key={agency.id} style={styles.packageCard}>
-                    <h3 style={styles.packageName}>{agency.name}</h3>
-
-                    <p style={styles.packageInfo}>
-                      <strong>Email:</strong> {agency.email}
-                    </p>
-
-                    <p style={styles.packageInfo}>
-                      <strong>Phone:</strong> {agency.phone}
-                    </p>
-
-                    {agency.address && (
-                      <p style={styles.packageInfo}>
-                        <strong>Address:</strong> {agency.address}
-                      </p>
-                    )}
-
-                    <button
-                      onClick={() => handleDeleteAgency(agency.id)}
-                      style={styles.deleteBtn}
-                    >
-                      🗑️ Delete
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
-};
-
-// Inline Styles
-const styles = {
-  container: {
-    padding: '20px',
-    maxWidth: '1400px',
-    margin: '0 auto',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    backgroundColor: '#f5f5f5',
-    minHeight: '100vh',
-  },
-  header: {
-    marginBottom: '30px',
-  },
-  title: {
-    fontSize: '32px',
-    fontWeight: 'bold',
-    marginBottom: '20px',
-    textAlign: 'center',
-  },
-  buttons: {
-    display: 'flex',
-    gap: '10px',
-    justifyContent: 'center',
-    marginBottom: '30px',
-  },
-  tab: {
-    padding: '12px 24px',
-    border: 'none',
-    borderRadius: '4px',
-    backgroundColor: '#e0e0e0',
-    color: '#333',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '600',
-    transition: 'all 0.3s',
-  },
-  tabActive: {
-    backgroundColor: '#007bff',
-    color: 'white',
-  },
-  message: {
-    padding: '12px 16px',
-    marginBottom: '20px',
-    borderRadius: '4px',
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  mainContainer: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '30px',
-  },
-  formSection: {
-    backgroundColor: 'white',
-    padding: '24px',
-    borderRadius: '8px',
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-  },
-  formTitle: {
-    fontSize: '20px',
-    fontWeight: '600',
-    marginBottom: '20px',
-    color: '#333',
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-  },
-  formGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-  },
-  label: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#333',
-  },
-  input: {
-    padding: '10px 12px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    fontSize: '14px',
-    fontFamily: 'inherit',
-    transition: 'border-color 0.2s',
-    boxSizing: 'border-box',
-  },
-  submitBtn: {
-    padding: '12px 24px',
-    backgroundColor: '#007bff',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'background-color 0.2s',
-  },
-  packagesSection: {
-    backgroundColor: 'white',
-    padding: '24px',
-    borderRadius: '8px',
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-  },
-  packagesTitle: {
-    fontSize: '20px',
-    fontWeight: '600',
-    marginBottom: '20px',
-    color: '#333',
-  },
-  packagesList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  },
-  emptyMessage: {
-    color: '#999',
-    textAlign: 'center',
-    padding: '20px',
-    fontSize: '14px',
-  },
-  packageCard: {
-    backgroundColor: '#f9f9f9',
-    padding: '16px',
-    borderRadius: '6px',
-    borderLeft: '4px solid #007bff',
-  },
-  packageName: {
-    fontSize: '16px',
-    fontWeight: '600',
-    marginBottom: '12px',
-    color: '#333',
-  },
-  packageInfo: {
-    fontSize: '13px',
-    color: '#666',
-    margin: '6px 0',
-  },
-  deleteBtn: {
-    padding: '8px 16px',
-    backgroundColor: '#dc3545',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    fontSize: '13px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'background-color 0.2s',
-  },
-};
-
-export default AdminPanel;
+}
