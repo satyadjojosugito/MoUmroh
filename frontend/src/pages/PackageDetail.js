@@ -269,23 +269,30 @@ export default function PackageDetail() {
           textAlign: 'center'
         }}>
           <p style={{ fontSize: '15px', color: '#444', margin: '0 0 16px 0' }}>
-            Tertarik dengan paket ini? Hubungi agensi untuk informasi lebih lanjut.
+            Tertarik dengan paket ini? Hubungi kami melalui WhatsApp untuk informasi lebih lanjut.
           </p>
-          <button
-            onClick={() => navigate('/contact')}
+          <a
+            href={`https://wa.me/6282111909060?text=Halo%20saya%20tertarik%20dengan%20paket%20%22${encodeURIComponent(pkg.name)}%22`}
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
+              display: 'inline-block',
               padding: '13px 36px',
-              backgroundColor: '#000',
+              backgroundColor: '#25d366',
               color: '#fff',
               border: 'none',
               borderRadius: '8px',
               cursor: 'pointer',
               fontSize: '15px',
-              fontWeight: '600'
+              fontWeight: '600',
+              textDecoration: 'none',
+              transition: 'background-color 0.3s'
             }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#20ba5a'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#25d366'}
           >
-            Hubungi Kami
-          </button>
+            💬 Hubungi Kami di WhatsApp
+          </a>
         </div>
  
       </div>
