@@ -118,6 +118,24 @@ export default function Packages() {
         borderBottom: '1px solid #e0e0e0'
       }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              marginBottom: '16px',
+              padding: '8px 12px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              color: '#666',
+              fontSize: '14px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            ← Kembali ke Beranda
+          </button>
           <h1 style={{
             fontSize: '40px',
             fontWeight: '700',
