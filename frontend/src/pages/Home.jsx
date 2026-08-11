@@ -133,12 +133,17 @@ const getAgencyLabel = (value) => {
           <p style={{ textAlign: 'center', color: '#999' }}>Memuat paket...</p>
         ) : (
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: '20px'
+            display: 'flex',
+            gap: '20px',
+            overflowX: 'auto',
+            paddingBottom: '12px',
+            scrollSnapType: 'x mandatory',
+            WebkitOverflowScrolling: 'touch'
           }}>
             {packages.map(pkg => (
               <div key={pkg.id} style={{
+                flex: '0 0 275px',
+                scrollSnapAlign: 'start',
                 border: '1px solid #e0e0e0',
                 borderRadius: '12px',
                 overflow: 'hidden',
