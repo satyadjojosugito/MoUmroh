@@ -6,7 +6,6 @@ const API_URL = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.verce
 
 export default function Home() {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [agencyMap, setAgencyMap] = useState({});
@@ -29,12 +28,6 @@ export default function Home() {
       console.error('Error fetching packages:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      navigate(`/packages?search=${encodeURIComponent(searchQuery)}`);
     }
   };
 
