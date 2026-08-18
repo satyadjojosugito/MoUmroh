@@ -126,7 +126,7 @@ export default function Home() {
             marginBottom: '16px',
             color: '#fff'
           }}>
-            🕌 MoUmroh
+            MoUmroh
           </h1>
           <p style={{
             fontSize: '16px',
