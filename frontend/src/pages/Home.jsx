@@ -126,7 +126,7 @@ export default function Home() {
             marginBottom: '16px',
             color: '#fff'
           }}>
-            MoUmroh
+            🕌 MoUmroh
           </h1>
           <p style={{
             fontSize: '16px',
@@ -370,77 +370,60 @@ export default function Home() {
 
       {/* Features Section */}
       <section style={{
-        backgroundImage: 'url("https://i.imgur.com/vLx2MA2.jpg")',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
+        backgroundColor: '#f8f9fa',
         padding: '60px 20px',
-        marginTop: '60px',
-        position: 'relative'
+        marginTop: '60px'
       }}>
-        {/* Dark overlay */}
         <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          zIndex: 0
-        }} />
-
-        {/* Content wrapper */}
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{
-            maxWidth: '600px',
-            margin: '0 auto'
+          maxWidth: '600px',
+          margin: '0 auto'
+        }}>
+          <h2 style={{
+            fontSize: '32px',
+            fontWeight: '700',
+            marginBottom: '40px',
+            textAlign: 'center',
+            color: '#000'
           }}>
-            <h2 style={{
-              fontSize: '32px',
-              fontWeight: '700',
-              marginBottom: '40px',
-              textAlign: 'center',
-              color: '#fff'
-            }}>
-              Mengapa Pilih MoUmroh?
-            </h2>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr',
-              gap: '24px'
-            }}>
-              {[
-                { icon: '✓', title: 'Agensi Terpercaya', desc: 'Hanya dari agensi yang telah terverifikasi' },
-                { icon: '💰', title: 'Harga Kompetitif', desc: 'Bandingkan harga dan pilih yang terbaik' },
-                { icon: '🛡️', title: 'Aman & Terpercaya', desc: 'Proses booking yang transparan dan aman' }
-              ].map((feature, idx) => (
-                <div key={idx} style={{
-                  textAlign: 'center',
-                  padding: '20px'
+            Mengapa Pilih MoUmroh?
+          </h2>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr',
+            gap: '24px'
+          }}>
+            {[
+              { icon: '✓', title: 'Agensi Terpercaya', desc: 'Hanya dari agensi yang telah terverifikasi' },
+              { icon: '💰', title: 'Harga Kompetitif', desc: 'Bandingkan harga dan pilih yang terbaik' },
+              { icon: '🛡️', title: 'Aman & Terpercaya', desc: 'Proses booking yang transparan dan aman' }
+            ].map((feature, idx) => (
+              <div key={idx} style={{
+                textAlign: 'center',
+                padding: '20px'
+              }}>
+                <p style={{
+                  fontSize: '40px',
+                  marginBottom: '16px',
+                  color: idx === 0 ? '#0066cc' : 'inherit'
                 }}>
-                  <p style={{
-                    fontSize: '40px',
-                    marginBottom: '16px'
-                  }}>
-                    {feature.icon}
-                  </p>
-                  <h3 style={{
-                    fontSize: '18px',
-                    fontWeight: '700',
-                    marginBottom: '8px',
-                    color: '#fff'
-                  }}>
-                    {feature.title}
-                  </h3>
-                  <p style={{
-                    fontSize: '14px',
-                    color: '#e0e0e0'
-                  }}>
-                    {feature.desc}
-                  </p>
-                </div>
-              ))}
-            </div>
+                  {feature.icon}
+                </p>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '700',
+                  marginBottom: '8px',
+                  color: '#000'
+                }}>
+                  {feature.title}
+                </h3>
+                <p style={{
+                  fontSize: '14px',
+                  color: '#666'
+                }}>
+                  {feature.desc}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
