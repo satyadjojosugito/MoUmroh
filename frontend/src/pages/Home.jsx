@@ -411,36 +411,54 @@ export default function Home() {
             }}>
               {[
                 { icon: '✓', title: 'Agensi Terpercaya', desc: 'Hanya dari agensi yang telah terverifikasi' },
-              { icon: '💰', title: 'Harga Kompetitif', desc: 'Bandingkan harga dan pilih yang terbaik' },
-              { icon: '🛡️', title: 'Aman & Terpercaya', desc: 'Proses booking yang transparan dan aman' }
-            ].map((feature, idx) => (
-              <div key={idx} style={{
-                textAlign: 'center',
-                padding: '20px'
-              }}>
-                <p style={{
-                  fontSize: '40px',
-                  marginBottom: '16px',
-                  color: idx === 0 ? '#0066cc' : 'inherit'
+                { icon: '💰', title: 'Harga Kompetitif', desc: 'Bandingkan harga dan pilih yang terbaik' },
+                { icon: '🛡️', title: 'Aman & Terpercaya', desc: 'Proses booking yang transparan dan aman' }
+              ].map((feature, idx) => (
+                <div key={idx} style={{
+                  textAlign: 'center',
+                  padding: '20px'
                 }}>
-                  {feature.icon}
-                </p>
-                <h3 style={{
-                  fontSize: '18px',
-                  fontWeight: '700',
-                  marginBottom: '8px',
-                  color: '#000'
-                }}>
-                  {feature.title}
-                </h3>
-                <p style={{
-                  fontSize: '14px',
-                  color: '#666'
-                }}>
-                  {feature.desc}
-                </p>
-              </div>
-            ))}
+                  {idx === 0 ? (
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '50px',
+                      height: '50px',
+                      borderRadius: '50%',
+                      backgroundColor: '#0066cc',
+                      color: '#fff',
+                      fontSize: '28px',
+                      fontWeight: 'bold',
+                      marginBottom: '8px'
+                    }}>
+                      {feature.icon}
+                    </div>
+                  ) : (
+                    <p style={{
+                      fontSize: '40px',
+                      marginBottom: '16px'
+                    }}>
+                      {feature.icon}
+                    </p>
+                  )}
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: '700',
+                    marginBottom: '8px',
+                    color: '#fff'
+                  }}>
+                    {feature.title}
+                  </h3>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#e0e0e0'
+                  }}>
+                    {feature.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
