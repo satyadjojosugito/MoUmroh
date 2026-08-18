@@ -86,65 +86,87 @@ const scrollRef = useRef(null);
     <div style={{ minHeight: '100vh', backgroundColor: '#ffffff' }}>
       {/* Hero Section */}
       <section style={{
-        padding: '60px 20px',
-        textAlign: 'center',
-        backgroundColor: '#f8f9fa',
-        borderBottom: '1px solid #e0e0e0'
-      }}>
-        <h1 style={{
-          fontSize: '48px',
-          fontWeight: '700',
-          marginBottom: '16px',
-          color: '#000'
-        }}>
-          🕌 MoUmroh
-        </h1>
-        <p style={{
+  padding: '60px 20px',
+  textAlign: 'center',
+  backgroundImage: 'url("https://i.imgur.com/vLx2MA2.jpg")',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  backgroundAttachment: 'fixed',
+  position: 'relative',
+  borderBottom: '1px solid #e0e0e0',
+  minHeight: '500px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center'
+}}>
+  {/* Dark overlay for text readability */}
+  <div style={{
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    zIndex: 0
+  }} />
+  
+  {/* Content wrapper - positioned above overlay */}
+  <div style={{ position: 'relative', zIndex: 1, width: '100%' }}>
+    <h1 style={{
+      fontSize: '48px',
+      fontWeight: '700',
+      marginBottom: '16px',
+      color: '#fff'
+    }}>
+      🕌 MoUmroh
+    </h1>
+    <p style={{
+      fontSize: '16px',
+      color: '#fff',
+      marginBottom: '40px'
+    }}>
+      Temukan paket umroh terbaik dari berbagai travel terkemuka
+    </p>
+    {/* Search Bar */}
+    <div style={{
+      maxWidth: '600px',
+      margin: '0 auto',
+      display: 'flex',
+      gap: '8px'
+    }}>
+      <input
+        type="text"
+        placeholder="Cari paket umroh, destinasi, atau agensi..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+        style={{
+          flex: 1,
+          padding: '14px 16px',
+          border: '1px solid #ddd',
+          borderRadius: '8px',
           fontSize: '16px',
-          color: '#999',
-          marginBottom: '40px'
-        }}>
-          Temukan paket umroh terbaik dari berbagai travel terkemuka
-        </p>
-        {/* Search Bar */}
-        <div style={{
-          maxWidth: '600px',
-          margin: '0 auto',
-          display: 'flex',
-          gap: '8px'
-        }}>
-          <input
-            type="text"
-            placeholder="Cari paket umroh, destinasi, atau agensi..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            style={{
-              flex: 1,
-              padding: '14px 16px',
-              border: '1px solid #ddd',
-              borderRadius: '8px',
-              fontSize: '16px',
-              outline: 'none'
-            }}
-          />
-          <button
-            onClick={handleSearch}
-            style={{
-              padding: '14px 32px',
-              backgroundColor: '#000',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: '600'
-            }}
-          >
-            Cari
-          </button>
-        </div>
-      </section>
+          outline: 'none'
+        }}
+      />
+      <button
+        onClick={handleSearch}
+        style={{
+          padding: '14px 32px',
+          backgroundColor: '#000',
+          color: '#fff',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontSize: '16px',
+          fontWeight: '600'
+        }}
+      >
+        Cari
+      </button>
+    </div>
+  </div>
+</section>
       {/* Featured Packages */}
       <section style={{
         maxWidth: '1200px',
