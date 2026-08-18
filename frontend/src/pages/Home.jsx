@@ -114,7 +114,7 @@ export default function Home() {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.4)',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
           zIndex: 0
         }} />
 
@@ -135,44 +135,6 @@ export default function Home() {
           }}>
             Temukan paket umroh terbaik dari berbagai travel terkemuka
           </p>
-          {/* Search Bar */}
-          <div style={{
-            maxWidth: '600px',
-            margin: '0 auto',
-            display: 'flex',
-            gap: '8px'
-          }}>
-            <input
-              type="text"
-              placeholder="Cari paket umroh, destinasi, atau agensi..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              style={{
-                flex: 1,
-                padding: '14px 16px',
-                border: '1px solid #ddd',
-                borderRadius: '8px',
-                fontSize: '16px',
-                outline: 'none'
-              }}
-            />
-            <button
-              onClick={handleSearch}
-              style={{
-                padding: '14px 32px',
-                backgroundColor: '#000',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '16px',
-                fontWeight: '600'
-              }}
-            >
-              Cari
-            </button>
-          </div>
         </div>
       </section>
 
@@ -304,7 +266,7 @@ export default function Home() {
         {/* Hubungi Kami Button Only - No "Lihat Semua Paket" */}
         <div style={{ textAlign: 'center', marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '12px', justifyContent: 'center', alignItems: 'center', maxWidth: '400px', margin: '40px auto 0' }}>
           <a
-            href="https://wa.me/62853571060000"
+            href="https://wa.me/6285357106000"
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -332,77 +294,95 @@ export default function Home() {
 
       {/* Features Section */}
       <section style={{
-        backgroundColor: '#f8f9fa',
+        backgroundImage: 'url("https://i.imgur.com/vLx2MA2.jpg")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
         padding: '60px 20px',
-        marginTop: '60px'
+        marginTop: '60px',
+        position: 'relative'
       }}>
+        {/* Dark overlay */}
         <div style={{
-          maxWidth: '600px',
-          margin: '0 auto'
-        }}>
-          <h2 style={{
-            fontSize: '32px',
-            fontWeight: '700',
-            marginBottom: '40px',
-            textAlign: 'center',
-            color: '#000'
-          }}>
-            Mengapa Pilih MoUmroh?
-          </h2>
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 0
+        }} />
+
+        {/* Content wrapper */}
+        <div style={{ position: 'relative', zIndex: 1 }}>
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr',
-            gap: '24px'
+            maxWidth: '600px',
+            margin: '0 auto'
           }}>
-            {[
-              { icon: '✓', title: 'Agensi Terpercaya', desc: 'Hanya dari agensi yang telah terverifikasi' },
-              { icon: '💰', title: 'Harga Kompetitif', desc: 'Bandingkan harga dan pilih yang terbaik' },
-              { icon: '🛡️', title: 'Aman & Terpercaya', desc: 'Proses booking yang transparan dan aman' }
-            ].map((feature, idx) => (
-              <div key={idx} style={{
-                textAlign: 'center',
-                padding: '20px'
-              }}>
-                {idx === 0 ? (
-                  <div style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '50px',
-                    height: '50px',
-                    borderRadius: '50%',
-                    backgroundColor: '#0066cc',
-                    color: '#fff',
-                    fontSize: '28px',
-                    fontWeight: 'bold',
-                    marginBottom: '8px'
+            <h2 style={{
+              fontSize: '32px',
+              fontWeight: '700',
+              marginBottom: '40px',
+              textAlign: 'center',
+              color: '#fff'
+            }}>
+              Mengapa Pilih MoUmroh?
+            </h2>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr',
+              gap: '24px'
+            }}>
+              {[
+                { icon: '✓', title: 'Agensi Terpercaya', desc: 'Hanya dari agensi yang telah terverifikasi' },
+                { icon: '💰', title: 'Harga Kompetitif', desc: 'Bandingkan harga dan pilih yang terbaik' },
+                { icon: '🛡️', title: 'Aman & Terpercaya', desc: 'Proses booking yang transparan dan aman' }
+              ].map((feature, idx) => (
+                <div key={idx} style={{
+                  textAlign: 'center',
+                  padding: '20px'
+                }}>
+                  {idx === 0 ? (
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '50px',
+                      height: '50px',
+                      borderRadius: '50%',
+                      backgroundColor: '#0066cc',
+                      color: '#fff',
+                      fontSize: '28px',
+                      fontWeight: 'bold',
+                      marginBottom: '8px'
+                    }}>
+                      {feature.icon}
+                    </div>
+                  ) : (
+                    <p style={{
+                      fontSize: '40px',
+                      marginBottom: '16px'
+                    }}>
+                      {feature.icon}
+                    </p>
+                  )}
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: '700',
+                    marginBottom: '8px',
+                    color: '#fff'
                   }}>
-                    {feature.icon}
-                  </div>
-                ) : (
+                    {feature.title}
+                  </h3>
                   <p style={{
-                    fontSize: '40px',
-                    marginBottom: '16px'
+                    fontSize: '14px',
+                    color: '#e0e0e0'
                   }}>
-                    {feature.icon}
+                    {feature.desc}
                   </p>
-                )}
-                <h3 style={{
-                  fontSize: '18px',
-                  fontWeight: '700',
-                  marginBottom: '8px',
-                  color: '#000'
-                }}>
-                  {feature.title}
-                </h3>
-                <p style={{
-                  fontSize: '14px',
-                  color: '#666'
-                }}>
-                  {feature.desc}
-                </p>
-              </div>
-            ))}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
