@@ -370,30 +370,47 @@ export default function Home() {
 
       {/* Features Section */}
       <section style={{
-        backgroundColor: '#f8f9fa',
+        backgroundImage: 'url("https://i.imgur.com/vLx2MA2.jpg")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
         padding: '60px 20px',
-        marginTop: '60px'
+        marginTop: '60px',
+        position: 'relative'
       }}>
+        {/* Dark overlay */}
         <div style={{
-          maxWidth: '600px',
-          margin: '0 auto'
-        }}>
-          <h2 style={{
-            fontSize: '32px',
-            fontWeight: '700',
-            marginBottom: '40px',
-            textAlign: 'center',
-            color: '#000'
-          }}>
-            Mengapa Pilih MoUmroh?
-          </h2>
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 0
+        }} />
+
+        {/* Content wrapper */}
+        <div style={{ position: 'relative', zIndex: 1 }}>
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr',
-            gap: '24px'
+            maxWidth: '600px',
+            margin: '0 auto'
           }}>
-            {[
-              { icon: '✓', title: 'Agensi Terpercaya', desc: 'Hanya dari agensi yang telah terverifikasi' },
+            <h2 style={{
+              fontSize: '32px',
+              fontWeight: '700',
+              marginBottom: '40px',
+              textAlign: 'center',
+              color: '#fff'
+            }}>
+              Mengapa Pilih MoUmroh?
+            </h2>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr',
+              gap: '24px'
+            }}>
+              {[
+                { icon: '✓', title: 'Agensi Terpercaya', desc: 'Hanya dari agensi yang telah terverifikasi' },
               { icon: '💰', title: 'Harga Kompetitif', desc: 'Bandingkan harga dan pilih yang terbaik' },
               { icon: '🛡️', title: 'Aman & Terpercaya', desc: 'Proses booking yang transparan dan aman' }
             ].map((feature, idx) => (
