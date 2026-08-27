@@ -1,351 +1,331 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { MapPin, Clock, Calendar, Building2, CheckCircle } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import LoginModal from '../components/LoginModal';
- 
+import { MapPin, Calendar, Clock, Check } from 'lucide-react';
+
 const API_URL = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
- 
+
 export default function PackageDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated, login } = useAuth();
   const [pkg, setPkg] = useState(null);
-  const [agencyMap, setAgencyMap] = useState({});
   const [loading, setLoading] = useState(true);
- 
+  const [error, setError] = useState(null);
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [pkgRes, agencyRes] = await Promise.all([
-          axios.get(`${API_URL}/packages`),
-          axios.get(`${API_URL}/agencies`).catch(() => ({ data: [] })),
-        ]);
- 
-        const map = {};
-        (agencyRes.data || []).forEach(a => { map[String(a.id)] = a.name; });
-        setAgencyMap(map);
- 
-        const found = (pkgRes.data || []).find(p => String(p.id) === String(id));
-        setPkg(found || null);
-      } catch (error) {
-        console.error('Error fetching package:', error);
-        setPkg(null);
-      } finally {
-        setLoading(false);
-      }
-    };
- 
-    fetchData();
+    fetchPackageDetails();
   }, [id]);
- 
-  const formatCurrency = (amount) => `Rp${amount?.toLocaleString('id-ID') || '0'}`;
- 
-  const formatFullDate = (dateString) => {
-    if (!dateString) return '-';
+
+  const fetchPackageDetails = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/packages/${id}`);
+      setPkg(response.data);
+    } catch (err) {
+      setError('Failed to load package details');
+      console.error('Error fetching package:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString('id-ID', options);
   };
- 
-  const getAgencyLabel = (value) => {
-    if (!value) return '';
-    if (agencyMap[value]) return agencyMap[value];
-    return /^[a-f0-9]{24}$/i.test(value) ? '' : value;
-  };
- 
-  // Check authentication - if not logged in, show login modal
-  if (!isAuthenticated) {
-    return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#fff' }}>
-        <LoginModal
-          isOpen={true}
-          onClose={() => navigate('/packages')}
-          onLoginSuccess={(user) => {
-            login(user, localStorage.getItem('authToken'));
-          }}
-        />
-        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <p style={{ color: '#999', fontSize: '16px' }}>Silakan masuk untuk melihat detail paket...</p>
-        </div>
-      </div>
-    );
-  }
- 
+
   if (loading) {
     return (
-      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#999', fontSize: '16px' }}>Memuat paket...</p>
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f8f9fa'
+      }}>
+        <p style={{ fontSize: '18px', color: '#666' }}>Memuat detail paket...</p>
       </div>
     );
   }
- 
-  if (!pkg) {
+
+  if (error || !pkg) {
     return (
-      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '16px', color: '#000' }}>
-            Paket tidak ditemukan
-          </h2>
-          <button
-            onClick={() => navigate('/packages')}
-            style={{
-              padding: '12px 28px',
-              backgroundColor: '#000',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '15px',
-              fontWeight: '600'
-            }}
-          >
-            Kembali ke Daftar Paket
-          </button>
-        </div>
-      </div>
-    );
-  }
- 
-  const agencyName = getAgencyLabel(pkg.agencies);
-  const inclusions = Array.isArray(pkg.inclusions) ? pkg.inclusions : [];
-  const itinerary = Array.isArray(pkg.itinerary) ? pkg.itinerary : [];
- 
-  const infoRow = (Icon, label, value) => (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '14px' }}>
-      <Icon size={18} style={{ color: '#0066cc', flexShrink: 0, marginTop: '2px' }} />
-      <div>
-        <p style={{ fontSize: '12px', color: '#999', margin: 0 }}>{label}</p>
-        <p style={{ fontSize: '15px', fontWeight: '600', color: '#000', margin: '2px 0 0 0' }}>{value}</p>
-      </div>
-    </div>
-  );
- 
-  return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#fff' }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '32px 20px 60px' }}>
- 
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f8f9fa',
+        padding: '20px'
+      }}>
+        <p style={{ fontSize: '18px', color: '#d32f2f', marginBottom: '20px' }}>
+          {error || 'Paket tidak ditemukan'}
+        </p>
         <button
           onClick={() => navigate('/packages')}
           style={{
-            background: 'none',
+            padding: '12px 32px',
+            backgroundColor: '#0066cc',
+            color: '#fff',
             border: 'none',
-            color: '#0066cc',
-            fontSize: '14px',
-            fontWeight: '600',
+            borderRadius: '8px',
             cursor: 'pointer',
-            padding: 0,
-            marginBottom: '24px'
+            fontSize: '16px',
+            fontWeight: '600'
           }}
         >
-          ← Kembali ke Daftar Paket
+          Kembali ke Paket
         </button>
- 
-        {/* Image */}
-        {pkg.image && (
-          <div style={{
-            height: '280px',
-            borderRadius: '12px',
-            backgroundColor: '#e0e0e0',
-            backgroundImage: `url('${pkg.image}')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            marginBottom: '28px'
-          }} />
-        )}
- 
-        {/* Title */}
-        <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#000', marginBottom: '8px', lineHeight: '1.2' }}>
-          {pkg.name}
-        </h1>
- 
-        {agencyName && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa', padding: '40px 20px' }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+        {/* Back Button */}
+        <button
+          onClick={() => navigate('/packages')}
+          style={{
+            marginBottom: '30px',
+            padding: '10px 16px',
+            backgroundColor: '#fff',
+            border: '1px solid #e0e0e0',
+            borderRadius: '8px',
+            cursor: 'pointer',
             fontSize: '14px',
-            color: '#0066cc',
             fontWeight: '600',
-            marginBottom: '24px'
-          }}>
-            <Building2 size={15} />
-            <span>{agencyName}</span>
-          </div>
-        )}
- 
-        {/* Price */}
+            color: '#0066cc',
+            transition: 'all 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#f0f0f0';
+            e.currentTarget.style.borderColor = '#0066cc';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#fff';
+            e.currentTarget.style.borderColor = '#e0e0e0';
+          }}
+        >
+          ← Kembali
+        </button>
+
+        {/* Main Content Card */}
         <div style={{
-          padding: '20px',
-          backgroundColor: '#f8f9fa',
+          backgroundColor: '#fff',
           borderRadius: '12px',
-          marginBottom: '28px'
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          overflow: 'hidden'
         }}>
-          <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>Harga per orang</p>
-          <p style={{ fontSize: '30px', fontWeight: '700', color: '#000', margin: '4px 0 0 0' }}>
-            {formatCurrency(pkg.price)}
-          </p>
-        </div>
- 
-        {/* Key details */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '4px 24px',
-          padding: '20px',
-          border: '1px solid #e0e0e0',
-          borderRadius: '12px',
-          marginBottom: '28px'
-        }}>
-          {infoRow(MapPin, 'Tujuan', pkg.destination || '-')}
-          {infoRow(MapPin, 'Kota Keberangkatan', pkg.departureCity || '-')}
-          {infoRow(Calendar, 'Tanggal Keberangkatan', formatFullDate(pkg.departureDate))}
-          {infoRow(Clock, 'Durasi', `${pkg.duration || '-'} Hari`)}
-        </div>
- 
-        {/* Airlines */}
-        {pkg.airlines && (
-          <div style={{ marginBottom: '28px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#000', marginBottom: '12px' }}>
-              Maskapai
-            </h2>
-            <p style={{ fontSize: '15px', color: '#444', margin: 0 }}>{pkg.airlines}</p>
-          </div>
-        )}
- 
-        {/* Hotel */}
-        {pkg.hotel && (
-          <div style={{ marginBottom: '28px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#000', marginBottom: '12px' }}>
-              Hotel
-            </h2>
-            <p style={{ fontSize: '15px', color: '#444', margin: 0 }}>{pkg.hotel}</p>
-          </div>
-        )}
- 
-        {/* Friday Count */}
-        {pkg.fridayCount && (
-          <div style={{ marginBottom: '28px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#000', marginBottom: '12px' }}>
-              Berapa Kali Jumat
-            </h2>
-            <p style={{ fontSize: '15px', color: '#444', margin: 0 }}>{pkg.fridayCount}x Jumat</p>
-          </div>
-        )}
- 
-        {/* Description */}
-        {pkg.description && (
-          <div style={{ marginBottom: '28px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#000', marginBottom: '12px' }}>
-              Deskripsi
-            </h2>
-            <p style={{ fontSize: '15px', color: '#444', lineHeight: '1.7', margin: 0 }}>
-              {pkg.description}
+          {/* Header Section */}
+          <div style={{ padding: '40px 30px', backgroundColor: '#f8f9fa', borderBottom: '1px solid #e0e0e0' }}>
+            <h1 style={{
+              fontSize: '36px',
+              fontWeight: '700',
+              marginBottom: '12px',
+              color: '#000'
+            }}>
+              {pkg.name}
+            </h1>
+            <p style={{ fontSize: '16px', color: '#666', marginBottom: '20px' }}>
+              Paket perjalanan umroh terpilih untuk pengalaman spiritual yang tak terlupakan
             </p>
-          </div>
-        )}
- 
-        {/* Inclusions */}
-        {inclusions.length > 0 && (
-          <div style={{ marginBottom: '28px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#000', marginBottom: '12px' }}>
-              Yang Termasuk
-            </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px' }}>
-              {inclusions.map((item, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                  <CheckCircle size={17} style={{ color: '#16a34a', flexShrink: 0, marginTop: '2px' }} />
-                  <span style={{ fontSize: '14px', color: '#444' }}>
-                    {typeof item === 'string' ? item : item?.name || ''}
-                  </span>
+
+            {/* Info Grid */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+              gap: '20px'
+            }}>
+              {/* Price */}
+              <div style={{
+                backgroundColor: '#fff',
+                padding: '20px',
+                borderRadius: '8px',
+                border: '2px solid #0066cc'
+              }}>
+                <p style={{ fontSize: '12px', color: '#666', marginBottom: '8px', fontWeight: '600' }}>
+                  HARGA PER ORANG
+                </p>
+                <p style={{
+                  fontSize: '28px',
+                  fontWeight: '700',
+                  color: '#0066cc',
+                  margin: '0'
+                }}>
+                  Rp{pkg.price?.toLocaleString('id-ID') || '0'}
+                </p>
+              </div>
+
+              {/* Duration */}
+              <div style={{
+                backgroundColor: '#fff',
+                padding: '20px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <Clock size={24} style={{ color: '#0066cc', flexShrink: 0 }} />
+                <div>
+                  <p style={{ fontSize: '12px', color: '#666', margin: 0, fontWeight: '600' }}>DURASI</p>
+                  <p style={{ fontSize: '20px', fontWeight: '700', color: '#000', margin: 0 }}>
+                    {pkg.duration} Hari
+                  </p>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
- 
-        {/* Exclusions */}
-        {pkg.exclusions && Array.isArray(pkg.exclusions) && pkg.exclusions.length > 0 && (
-          <div style={{ marginBottom: '28px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#000', marginBottom: '12px' }}>
-              Tidak Termasuk
-            </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px' }}>
-              {pkg.exclusions.map((item, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                  <span style={{ fontSize: '16px', color: '#dc2626', flexShrink: 0 }}>✕</span>
-                  <span style={{ fontSize: '14px', color: '#555' }}>
-                    {typeof item === 'string' ? item : item?.name || ''}
-                  </span>
+              </div>
+
+              {/* Destination */}
+              <div style={{
+                backgroundColor: '#fff',
+                padding: '20px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <MapPin size={24} style={{ color: '#0066cc', flexShrink: 0 }} />
+                <div>
+                  <p style={{ fontSize: '12px', color: '#666', margin: 0, fontWeight: '600' }}>TUJUAN</p>
+                  <p style={{ fontSize: '20px', fontWeight: '700', color: '#000', margin: 0 }}>
+                    {pkg.destination}
+                  </p>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
-        )}
- 
-        {/* Itinerary */}
-        {itinerary.length > 0 && (
-          <div style={{ marginBottom: '28px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#000', marginBottom: '12px' }}>
-              Rencana Perjalanan
+
+          {/* Details Section */}
+          <div style={{ padding: '40px 30px' }}>
+            <h2 style={{
+              fontSize: '24px',
+              fontWeight: '700',
+              marginBottom: '24px',
+              color: '#000'
+            }}>
+              Detail Paket
             </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {itinerary.map((day, idx) => {
-                const isObject = day && typeof day === 'object';
-                const title = isObject ? (day.title || `Hari ${day.day || idx + 1}`) : `Hari ${idx + 1}`;
-                const body = isObject ? day.description : day;
-                return (
-                  <div key={idx} style={{ paddingBottom: '14px', borderBottom: '1px solid #f0f0f0' }}>
-                    <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0066cc', margin: '0 0 4px 0' }}>
-                      {title}
-                    </h3>
-                    {body && (
-                      <p style={{ fontSize: '14px', color: '#555', margin: 0, lineHeight: '1.6' }}>{body}</p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
- 
-        {/* Contact */}
-        <div style={{
-          padding: '24px',
-          backgroundColor: '#f8f9fa',
-          borderRadius: '12px',
-          textAlign: 'center'
-        }}>
-          <p style={{ fontSize: '15px', color: '#444', margin: '0 0 16px 0' }}>
-            Tertarik dengan paket ini? Hubungi kami melalui WhatsApp untuk informasi lebih lanjut.
-          </p>
-          <a
-            href={`https://wa.me/6282111909060?text=Halo%20saya%20tertarik%20dengan%20paket%20%22${encodeURIComponent(pkg.name)}%22`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-block',
-              padding: '13px 36px',
-              backgroundColor: '#25d366',
-              color: '#fff',
-              border: 'none',
+
+            {/* Departure Info */}
+            <div style={{
+              backgroundColor: '#f8f9fa',
+              padding: '24px',
               borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '15px',
-              fontWeight: '600',
-              textDecoration: 'none',
-              transition: 'background-color 0.3s'
-            }}
-            onMouseEnter={(e) => e.target.style.backgroundColor = '#20ba5a'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = '#25d366'}
-          >
-            💬 Hubungi Kami di WhatsApp
-          </a>
+              marginBottom: '30px',
+              border: '1px solid #e0e0e0'
+            }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px', color: '#000' }}>
+                Informasi Keberangkatan
+              </h3>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                gap: '16px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Calendar size={20} style={{ color: '#0066cc', flexShrink: 0 }} />
+                  <div>
+                    <p style={{ fontSize: '12px', color: '#666', margin: 0, fontWeight: '600' }}>Tanggal Berangkat</p>
+                    <p style={{ fontSize: '16px', fontWeight: '700', color: '#000', margin: '4px 0 0 0' }}>
+                      {formatDate(pkg.departureDate)}
+                    </p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <MapPin size={20} style={{ color: '#0066cc', flexShrink: 0 }} />
+                  <div>
+                    <p style={{ fontSize: '12px', color: '#666', margin: 0, fontWeight: '600' }}>Kota Keberangkatan</p>
+                    <p style={{ fontSize: '16px', fontWeight: '700', color: '#000', margin: '4px 0 0 0' }}>
+                      {pkg.departureCity}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Description */}
+            {pkg.description && (
+              <div style={{ marginBottom: '30px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '12px', color: '#000' }}>
+                  Deskripsi Paket
+                </h3>
+                <p style={{
+                  fontSize: '14px',
+                  lineHeight: '1.6',
+                  color: '#666',
+                  whiteSpace: 'pre-wrap'
+                }}>
+                  {pkg.description}
+                </p>
+              </div>
+            )}
+
+            {/* Included Features */}
+            <div style={{ marginBottom: '30px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px', color: '#000' }}>
+                Yang Sudah Termasuk
+              </h3>
+              <ul style={{
+                listStyle: 'none',
+                padding: 0,
+                margin: 0,
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                gap: '12px'
+              }}>
+                {[
+                  'Tiket pesawat (pulang pergi)',
+                  'Hotel bintang 3-4',
+                  'Makan 3x sehari',
+                  'Tour guide profesional',
+                  'Asuransi perjalanan',
+                  'Visa dan dokumen'
+                ].map((item, idx) => (
+                  <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Check size={20} style={{ color: '#0066cc', flexShrink: 0 }} />
+                    <span style={{ fontSize: '14px', color: '#333' }}>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* CTA Section */}
+          <div style={{
+            padding: '40px 30px',
+            backgroundColor: '#f8f9fa',
+            borderTop: '1px solid #e0e0e0',
+            textAlign: 'center'
+          }}>
+            <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>
+              Tertarik dengan paket ini? Hubungi kami sekarang untuk info lebih lanjut dan booking
+            </p>
+            <a
+              href="https://wa.me/6285357106000"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-block',
+                padding: '14px 48px',
+                backgroundColor: '#25d366',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '16px',
+                fontWeight: '600',
+                textDecoration: 'none',
+                transition: 'background-color 0.3s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#20ba5a'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#25d366'}
+            >
+              💬 Hubungi Kami via WhatsApp
+            </a>
+          </div>
         </div>
- 
       </div>
     </div>
   );
 }
- 
