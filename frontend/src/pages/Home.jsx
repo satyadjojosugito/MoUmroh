@@ -63,7 +63,7 @@ export default function Home() {
   const scrollByCards = (direction) => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollBy({ left: direction * 295, behavior: 'smooth' });
+    el.scrollBy({ left: direction * 260, behavior: 'smooth' });
   };
 
   const arrowStyle = (side) => ({
@@ -134,24 +134,9 @@ export default function Home() {
       {/* Featured Packages */}
       <section style={{
         maxWidth: '1200px',
-        margin: '60px auto',
+        margin: '30px auto',
         padding: '0 20px'
       }}>
-        <h2 style={{
-          fontSize: '32px',
-          fontWeight: '700',
-          marginBottom: '8px',
-          color: '#000'
-        }}>
-          Paket Unggulan
-        </h2>
-        <p style={{
-          fontSize: '16px',
-          color: '#666',
-          marginBottom: '40px'
-        }}>
-          Koleksi paket umroh pilihan dengan harga terjangkau
-        </p>
         {loading ? (
           <p style={{ textAlign: 'center', color: '#999' }}>Memuat paket...</p>
         ) : (
@@ -179,7 +164,7 @@ export default function Home() {
               }}>
               {packages.map(pkg => (
                 <div key={pkg.id} style={{
-                  flex: '0 0 275px',
+                  flex: '0 0 240px',
                   scrollSnapAlign: 'start',
                   border: '1px solid #e0e0e0',
                   borderRadius: '12px',
