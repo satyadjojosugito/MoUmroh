@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { MapPin, Calendar, Clock, Check } from 'lucide-react';
@@ -12,11 +12,7 @@ export default function PackageDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchPackageDetails();
-  }, [id]);
-
-  const fetchPackageDetails = async () => {
+  const fetchPackageDetails = useCallback(async () => {
     try {
       const response = await axios.get(`${API_URL}/packages/${id}`);
       setPkg(response.data);
@@ -26,7 +22,11 @@ export default function PackageDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchPackageDetails();
+  }, [fetchPackageDetails]);
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
