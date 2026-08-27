@@ -63,7 +63,7 @@ export default function Home() {
   const scrollByCards = (direction) => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollBy({ left: direction * 260, behavior: 'smooth' });
+    el.scrollBy({ left: direction * 340, behavior: 'smooth' });
   };
 
   const arrowStyle = (side) => ({
@@ -164,7 +164,7 @@ export default function Home() {
               }}>
               {packages.map(pkg => (
                 <div key={pkg.id} style={{
-                  flex: '0 0 240px',
+                  flex: '0 0 320px',
                   scrollSnapAlign: 'start',
                   border: '1px solid #e0e0e0',
                   borderRadius: '12px',
@@ -177,11 +177,28 @@ export default function Home() {
                 onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
                 onClick={() => navigate(`/package/${pkg.id}`)}
                 >
-                  <div style={{ padding: '16px' }}>
+                  <div style={{
+                    width: '100%',
+                    height: '260px',
+                    backgroundColor: '#f0f0f0',
+                    overflow: 'hidden'
+                  }}>
+                    <img
+                      src={pkg.image || 'https://via.placeholder.com/400x300?text=No+Image'}
+                      alt={pkg.name}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block'
+                      }}
+                    />
+                  </div>
+                  <div style={{ padding: '14px' }}>
                     <h3 style={{
-                      fontSize: '16px',
+                      fontSize: '15px',
                       fontWeight: '700',
-                      marginBottom: '6px',
+                      marginBottom: '4px',
                       color: '#000',
                       lineHeight: '1.3'
                     }}>
@@ -190,49 +207,52 @@ export default function Home() {
 
                     {pkg.agencies && (
                       <p style={{
-                        fontSize: '12px',
+                        fontSize: '11px',
                         color: '#666',
-                        marginBottom: '8px',
+                        marginBottom: '4px',
                         fontWeight: '600'
                       }}>
                         🏢 {getAgencyLabel(pkg.agencies)}
                       </p>
                     )}
 
-                    <p style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>
+                    <p style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>
                       ✈️ Tujuan: {pkg.destination}
                     </p>
 
-                    <p style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>
+                    <p style={{ fontSize: '11px', color: '#666', marginBottom: '4px' }}>
                       📍 Keberangkatan: {pkg.departureCity}
                     </p>
 
-                    <p style={{ fontSize: '13px', color: '#666', marginBottom: '10px' }}>
+                    <p style={{ fontSize: '11px', color: '#666', marginBottom: '6px' }}>
                       📅 Berangkat: {formatDateMonthYear(pkg.departureDate)}
                     </p>
 
                     <div style={{
                       display: 'flex',
-                      gap: '8px',
-                      marginBottom: '12px',
-                      fontSize: '12px',
+                      gap: '6px',
+                      marginBottom: '8px',
+                      fontSize: '10px',
                       color: '#999',
                       flexWrap: 'wrap'
                     }}>
                       <span>📅 {pkg.duration} Hari</span>
                     </div>
 
+                    <p style={{ fontSize: '10px', color: '#999', margin: '0 0 2px 0' }}>
+                      Mulai dari
+                    </p>
                     <div style={{
                       display: 'flex',
                       justifyContent: 'flex-start',
                       alignItems: 'center',
                       gap: '8px'
                     }}>
-                      <p style={{ fontSize: '18px', fontWeight: '700', color: '#000', margin: 0 }}>
+                      <p style={{ fontSize: '16px', fontWeight: '700', color: '#000', margin: 0 }}>
                         Rp{pkg.price?.toLocaleString('id-ID') || '0'}
                       </p>
                     </div>
-                    <p style={{ fontSize: '11px', color: '#999', margin: '2px 0 0 0' }}>
+                    <p style={{ fontSize: '10px', color: '#999', margin: '2px 0 0 0' }}>
                       per orang
                     </p>
                   </div>
