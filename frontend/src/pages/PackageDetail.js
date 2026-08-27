@@ -86,7 +86,7 @@ export default function PackageDetail() {
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         {/* Back Button */}
         <button
-          onClick={() => navigate('/packages')}
+          onClick={() => navigate('/')}
           style={{
             marginBottom: '30px',
             padding: '10px 16px',
@@ -118,7 +118,7 @@ export default function PackageDetail() {
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
           overflow: 'hidden'
         }}>
-          {/* Header Section */}
+          {/* Header Section with Package Info */}
           <div style={{ padding: '40px 30px', backgroundColor: '#f8f9fa', borderBottom: '1px solid #e0e0e0' }}>
             <h1 style={{
               fontSize: '36px',
@@ -128,15 +128,13 @@ export default function PackageDetail() {
             }}>
               {pkg.name}
             </h1>
-            <p style={{ fontSize: '16px', color: '#666', marginBottom: '20px' }}>
-              Paket perjalanan umroh terpilih untuk pengalaman spiritual yang tak terlupakan
-            </p>
 
             {/* Info Grid */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-              gap: '20px'
+              gap: '20px',
+              marginTop: '20px'
             }}>
               {/* Price */}
               <div style={{
@@ -289,41 +287,45 @@ export default function PackageDetail() {
                 ))}
               </ul>
             </div>
+
+            {/* CTA Section */}
+            <div style={{
+              padding: '40px 30px',
+              backgroundColor: '#f8f9fa',
+              borderTop: '1px solid #e0e0e0',
+              textAlign: 'center',
+              marginLeft: '-40px',
+              marginRight: '-40px',
+              marginBottom: '-30px'
+            }}>
+              <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>
+                Tertarik dengan paket ini? Hubungi kami sekarang untuk info lebih lanjut dan booking
+              </p>
+              <a
+                href="https://wa.me/6285357106000"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-block',
+                  padding: '14px 48px',
+                  backgroundColor: '#25d366',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  textDecoration: 'none',
+                  transition: 'background-color 0.3s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#20ba5a'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#25d366'}
+              >
+                💬 Hubungi Kami via WhatsApp
+              </a>
+            </div>
           </div>
 
-          {/* CTA Section */}
-          <div style={{
-            padding: '40px 30px',
-            backgroundColor: '#f8f9fa',
-            borderTop: '1px solid #e0e0e0',
-            textAlign: 'center'
-          }}>
-            <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>
-              Tertarik dengan paket ini? Hubungi kami sekarang untuk info lebih lanjut dan booking
-            </p>
-            <a
-              href="https://wa.me/6285357106000"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'inline-block',
-                padding: '14px 48px',
-                backgroundColor: '#25d366',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '16px',
-                fontWeight: '600',
-                textDecoration: 'none',
-                transition: 'background-color 0.3s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#20ba5a'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#25d366'}
-            >
-              💬 Hubungi Kami via WhatsApp
-            </a>
-          </div>
         </div>
       </div>
     </div>
