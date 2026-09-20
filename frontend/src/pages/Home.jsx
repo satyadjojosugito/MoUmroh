@@ -362,7 +362,7 @@ export default function Home() {
               gap: '24px'
             }}>
               {[
-                { icon: '✓', title: 'Agensi Terpercaya', desc: 'Hanya dari agensi yang telah terverifikasi' },
+                { icon: '✓', title: 'Travel Terpercaya', desc: 'Paket umroh dari Travel yang telah terverifikasi' },
                 { icon: '💰', title: 'Harga Kompetitif', desc: 'Bandingkan harga dan pilih yang terbaik' },
                 { icon: '🛡️', title: 'Aman & Terpercaya', desc: 'Proses booking yang transparan dan aman' }
               ].map((feature, idx) => (
