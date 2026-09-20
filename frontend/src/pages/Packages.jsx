@@ -4,9 +4,9 @@ import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
 
-// Any image URL pointing at the defunct placeholder service is treated as "no image"
+// The placeholder service is defunct, so treat any such URL as "no image"
 const isDeadPlaceholder = (url) =>
-  !url || /via\.placeholder\.com|placeholder\.com/i.test(url);
+  !url || /placeholder\.com/i.test(url);
 
 function PackageImage({ src, alt }) {
   const [failed, setFailed] = useState(false);
@@ -50,37 +50,81 @@ function PackageImage({ src, alt }) {
   );
 }
 
+const MONTHS = [
+  { value: '1', label: 'Januari' },
+  { value: '2', label: 'Februari' },
+  { value: '3', label: 'Maret' },
+  { value: '4', label: 'April' },
+  { value: '5', label: 'Mei' },
+  { value: '6', label: 'Juni' },
+  { value: '7', label: 'Juli' },
+  { value: '8', label: 'Agustus' },
+  { value: '9', label: 'September' },
+  { value: '10', label: 'Oktober' },
+  { value: '11', label: 'November' },
+  { value: '12', label: 'Desember' },
+];
+
+const FILTER_KEYS = ['search', 'maxPrice', 'departureCity', 'departureMonth', 'departureYear'];
+
 export default function Packages() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({
-    search: searchParams.get('search') || '',
-    maxPrice: '',
-    departureCity: '',
-    departureMonth: '',
-    departureYear: '',
-  });
   const [departureCities, setDepartureCities] = useState([]);
   const [years, setYears] = useState([]);
   const [agencyMap, setAgencyMap] = useState({});
 
-  // Initialize years and cities on mount
+  // The URL is the single source of truth for filters, so a shared or
+  // bookmarked link reproduces exactly what the visitor was looking at.
+  const filters = {
+    search: searchParams.get('search') || '',
+    maxPrice: searchParams.get('maxPrice') || '',
+    departureCity: searchParams.get('departureCity') || '',
+    departureMonth: searchParams.get('departureMonth') || '',
+    departureYear: searchParams.get('departureYear') || '',
+  };
+
+  const setFilter = (key, value) => {
+    const next = new URLSearchParams(searchParams);
+    if (value) {
+      next.set(key, value);
+    } else {
+      next.delete(key);
+    }
+    setSearchParams(next);
+  };
+
+  // Price is typed rather than picked, so it gets local state plus a debounce —
+  // otherwise every keystroke would push a history entry and refetch.
+  const [priceInput, setPriceInput] = useState(filters.maxPrice);
+
   useEffect(() => {
-    // Generate years from current year to 5 years ahead
+    setPriceInput(filters.maxPrice);
+  }, [filters.maxPrice]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (priceInput !== filters.maxPrice) setFilter('maxPrice', priceInput);
+    }, 500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [priceInput]);
+
+  // Years: current year through five ahead
+  useEffect(() => {
     const currentYear = new Date().getFullYear();
     const yearList = [];
     for (let i = currentYear; i <= currentYear + 5; i++) {
       yearList.push(i.toString());
     }
     setYears(yearList);
-
-    // Fetch packages to extract unique departure cities
-    fetchAllPackages();
+    fetchFilterOptions();
   }, []);
 
-  const fetchAllPackages = async () => {
+  // Unfiltered fetch, purely to populate the city dropdown and agency names
+  const fetchFilterOptions = async () => {
     try {
       const [pkgRes, agencyRes] = await Promise.all([
         axios.get(`${API_URL}/packages`),
@@ -89,26 +133,26 @@ export default function Packages() {
       const map = {};
       (agencyRes.data || []).forEach(a => { map[String(a.id)] = a.name; });
       setAgencyMap(map);
-      const uniqueCities = [...new Set(pkgRes.data.map(pkg => pkg.departureCity))];
+      const uniqueCities = [...new Set((pkgRes.data || []).map(p => p.departureCity))];
       setDepartureCities(uniqueCities.filter(Boolean).sort());
     } catch (error) {
-      console.error('Error fetching cities:', error);
+      console.error('Error fetching filter options:', error);
     }
   };
 
+  // Refetch whenever the query string changes
+  const queryString = searchParams.toString();
   useEffect(() => {
     const fetchPackages = async () => {
       try {
         setLoading(true);
         const params = {};
-        if (filters.search) params.search = filters.search;
-        if (filters.maxPrice) params.maxPrice = filters.maxPrice;
-        if (filters.departureCity) params.departureCity = filters.departureCity;
-        if (filters.departureMonth) params.departureMonth = filters.departureMonth;
-        if (filters.departureYear) params.departureYear = filters.departureYear;
-
+        FILTER_KEYS.forEach(key => {
+          const value = searchParams.get(key);
+          if (value) params[key] = value;
+        });
         const response = await axios.get(`${API_URL}/packages`, { params });
-        setPackages(response.data);
+        setPackages(response.data || []);
       } catch (error) {
         console.error('Error fetching packages:', error);
         setPackages([]);
@@ -116,18 +160,11 @@ export default function Packages() {
         setLoading(false);
       }
     };
-
     fetchPackages();
-  }, [filters]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryString]);
 
-  const handleFilterChange = (key, value) => {
-    setFilters({ ...filters, [key]: value });
-  };
-
-  // Format functions - MUST be defined before JSX
-  const formatCurrency = (amount) => {
-    return `Rp${amount?.toLocaleString('id-ID') || '0'}`;
-  };
+  const formatCurrency = (amount) => `Rp${amount?.toLocaleString('id-ID') || '0'}`;
 
   const getAgencyLabel = (value) => {
     if (!value) return '';
@@ -141,20 +178,19 @@ export default function Packages() {
     return new Date(dateString).toLocaleDateString('id-ID', options);
   };
 
-  const months = [
-    { value: '1', label: 'Januari' },
-    { value: '2', label: 'Februari' },
-    { value: '3', label: 'Maret' },
-    { value: '4', label: 'April' },
-    { value: '5', label: 'Mei' },
-    { value: '6', label: 'Juni' },
-    { value: '7', label: 'Juli' },
-    { value: '8', label: 'Agustus' },
-    { value: '9', label: 'September' },
-    { value: '10', label: 'Oktober' },
-    { value: '11', label: 'November' },
-    { value: '12', label: 'Desember' },
-  ];
+  // A readable summary of the active filters, used as the page heading
+  const activeHeading = () => {
+    const parts = [];
+    if (filters.departureCity) parts.push(`dari ${filters.departureCity}`);
+    if (filters.departureMonth) {
+      const m = MONTHS.find(x => x.value === filters.departureMonth);
+      if (m) parts.push(`bulan ${m.label}`);
+    }
+    if (filters.departureYear) parts.push(filters.departureYear);
+    return parts.length ? `Paket Umroh ${parts.join(' ')}` : 'Semua Paket Umroh';
+  };
+
+  const hasActiveFilters = FILTER_KEYS.some(k => filters[k]);
 
   const selectStyle = {
     width: '100%',
@@ -206,7 +242,7 @@ export default function Packages() {
             marginBottom: '16px',
             color: '#000'
           }}>
-            Semua Paket Umroh
+            {activeHeading()}
           </h1>
           <p style={{
             fontSize: '16px',
@@ -222,7 +258,7 @@ export default function Packages() {
         margin: '0 auto',
         padding: '40px 20px'
       }}>
-        {/* Filter Section - Centered and Above */}
+        {/* Filter Section */}
         <div style={{
           display: 'flex',
           justifyContent: 'center',
@@ -245,7 +281,6 @@ export default function Packages() {
               Filter
             </h3>
 
-            {/* Filter Grid */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
@@ -256,14 +291,12 @@ export default function Packages() {
                 <label style={labelStyle}>Kota Keberangkatan</label>
                 <select
                   value={filters.departureCity}
-                  onChange={(e) => handleFilterChange('departureCity', e.target.value)}
+                  onChange={(e) => setFilter('departureCity', e.target.value)}
                   style={selectStyle}
                 >
                   <option value="">Semua Kota</option>
                   {departureCities.map(city => (
-                    <option key={city} value={city}>
-                      {city}
-                    </option>
+                    <option key={city} value={city}>{city}</option>
                   ))}
                 </select>
               </div>
@@ -273,14 +306,12 @@ export default function Packages() {
                 <label style={labelStyle}>Bulan Keberangkatan</label>
                 <select
                   value={filters.departureMonth}
-                  onChange={(e) => handleFilterChange('departureMonth', e.target.value)}
+                  onChange={(e) => setFilter('departureMonth', e.target.value)}
                   style={selectStyle}
                 >
                   <option value="">Semua Bulan</option>
-                  {months.map(month => (
-                    <option key={month.value} value={month.value}>
-                      {month.label}
-                    </option>
+                  {MONTHS.map(month => (
+                    <option key={month.value} value={month.value}>{month.label}</option>
                   ))}
                 </select>
               </div>
@@ -290,14 +321,12 @@ export default function Packages() {
                 <label style={labelStyle}>Tahun Keberangkatan</label>
                 <select
                   value={filters.departureYear}
-                  onChange={(e) => handleFilterChange('departureYear', e.target.value)}
+                  onChange={(e) => setFilter('departureYear', e.target.value)}
                   style={selectStyle}
                 >
                   <option value="">Semua Tahun</option>
                   {years.map(year => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
+                    <option key={year} value={year}>{year}</option>
                   ))}
                 </select>
               </div>
@@ -308,29 +337,27 @@ export default function Packages() {
                 <input
                   type="number"
                   placeholder="0"
-                  value={filters.maxPrice}
-                  onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+                  value={priceInput}
+                  onChange={(e) => setPriceInput(e.target.value)}
                   style={selectStyle}
                 />
               </div>
 
               {/* Reset Button */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'flex-end'
-              }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end' }}>
                 <button
-                  onClick={() => setFilters({ search: '', maxPrice: '', departureCity: '', departureMonth: '', departureYear: '' })}
+                  onClick={() => setSearchParams(new URLSearchParams())}
+                  disabled={!hasActiveFilters}
                   style={{
                     width: '100%',
                     padding: '10px 12px',
-                    backgroundColor: '#e0e0e0',
+                    backgroundColor: hasActiveFilters ? '#e0e0e0' : '#f0f0f0',
                     border: 'none',
                     borderRadius: '6px',
-                    cursor: 'pointer',
+                    cursor: hasActiveFilters ? 'pointer' : 'default',
                     fontSize: '14px',
                     fontWeight: '600',
-                    color: '#000'
+                    color: hasActiveFilters ? '#000' : '#aaa'
                   }}
                 >
                   Reset Filter
@@ -345,9 +372,28 @@ export default function Packages() {
           {loading ? (
             <p style={{ textAlign: 'center', color: '#999' }}>Memuat paket...</p>
           ) : packages.length === 0 ? (
-            <p style={{ textAlign: 'center', color: '#999', fontSize: '16px' }}>
-              Tidak ada paket yang sesuai dengan filter Anda
-            </p>
+            <div style={{ textAlign: 'center', padding: '20px' }}>
+              <p style={{ color: '#999', fontSize: '16px', marginBottom: '16px' }}>
+                Tidak ada paket yang sesuai dengan filter Anda
+              </p>
+              {hasActiveFilters && (
+                <button
+                  onClick={() => setSearchParams(new URLSearchParams())}
+                  style={{
+                    padding: '10px 24px',
+                    backgroundColor: '#000',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600'
+                  }}
+                >
+                  Lihat Semua Paket
+                </button>
+              )}
+            </div>
           ) : (
             <>
               <p style={{
