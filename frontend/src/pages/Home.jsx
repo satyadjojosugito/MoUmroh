@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
 
-// Any image URL pointing at the defunct placeholder service is treated as "no image"
+// The placeholder service is defunct, so treat any such URL as "no image"
 const isDeadPlaceholder = (url) =>
-  !url || /via\.placeholder\.com|placeholder\.com/i.test(url);
+  !url || /placeholder\.com/i.test(url);
 
 function PackageImage({ src, alt }) {
   const [failed, setFailed] = useState(false);
@@ -49,6 +49,41 @@ function PackageImage({ src, alt }) {
     </div>
   );
 }
+
+// Links point at real filtered URLs. The year is computed so a month that has
+// already passed this year points at next year's departure instead of going stale.
+const nextYearFor = (month) => {
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  return month >= currentMonth ? now.getFullYear() : now.getFullYear() + 1;
+};
+
+const monthLink = (month, label) => ({
+  label: `Umroh Bulan ${label}`,
+  to: `/packages?departureMonth=${month}&departureYear=${nextYearFor(month)}`,
+});
+
+const SEO_GROUPS = [
+  {
+    title: 'Berdasarkan Kota Keberangkatan',
+    links: [
+      { label: 'Umroh dari Palembang', to: '/packages?departureCity=Palembang' },
+      { label: 'Umroh dari Jakarta', to: '/packages?departureCity=Jakarta' },
+    ],
+  },
+  {
+    title: 'Berdasarkan Bulan Keberangkatan',
+    links: [
+      monthLink(10, 'Oktober'),
+      monthLink(11, 'November'),
+      monthLink(12, 'Desember'),
+      monthLink(1, 'Januari'),
+      // Ramadan is a Hijri month and drifts ~11 days earlier each year.
+      // February is correct for 1448 AH (Feb 2027); recheck this each year.
+      monthLink(2, 'Ramadhan'),
+    ],
+  },
+];
 
 export default function Home() {
   const navigate = useNavigate();
@@ -291,9 +326,9 @@ export default function Home() {
             </div>
           </div>
         )}
-        {/* Hubungi Kami Button Only - No "Lihat Semua Paket" */}
+        {/* Hubungi Kami Button */}
         <div style={{ textAlign: 'center', marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '12px', justifyContent: 'center', alignItems: 'center', maxWidth: '400px', margin: '40px auto 0' }}>
-          <a
+          
             href="https://wa.me/6285357106000"
             target="_blank"
             rel="noopener noreferrer"
@@ -362,7 +397,7 @@ export default function Home() {
               gap: '24px'
             }}>
               {[
-                { icon: '✓', title: 'Travel Terpercaya', desc: 'Paket umroh dari Travel yang telah terverifikasi' },
+                { icon: '✓', title: 'Travel Terpercaya', desc: 'Hanya dari travel yang telah terverifikasi' },
                 { icon: '💰', title: 'Harga Kompetitif', desc: 'Bandingkan harga dan pilih yang terbaik' },
                 { icon: '🛡️', title: 'Aman', desc: 'Proses booking yang transparan' }
               ].map((feature, idx) => (
@@ -413,6 +448,58 @@ export default function Home() {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Browse by city / month */}
+      <section style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '60px 20px'
+      }}>
+        <h2 style={{
+          fontSize: '24px',
+          fontWeight: '700',
+          marginBottom: '8px',
+          color: '#000'
+        }}>
+          Jelajahi Paket Umroh
+        </h2>
+        <p style={{ fontSize: '14px', color: '#666', marginBottom: '28px' }}>
+          Temukan paket berdasarkan kota keberangkatan atau bulan perjalanan
+        </p>
+
+        {SEO_GROUPS.map(group => (
+          <div key={group.title} style={{ marginBottom: '28px' }}>
+            <h3 style={{
+              fontSize: '14px',
+              fontWeight: '700',
+              color: '#333',
+              marginBottom: '12px'
+            }}>
+              {group.title}
+            </h3>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+              {group.links.map(link => (
+                <Link
+                  key={link.label}
+                  to={link.to}
+                  style={{
+                    display: 'inline-block',
+                    padding: '8px 16px',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '20px',
+                    fontSize: '13px',
+                    color: '#333',
+                    textDecoration: 'none',
+                    backgroundColor: '#fff'
+                  }}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
       </section>
     </div>
   );
