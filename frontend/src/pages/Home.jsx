@@ -328,7 +328,7 @@ export default function Home() {
         )}
         {/* Hubungi Kami Button */}
         <div style={{ textAlign: 'center', marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '12px', justifyContent: 'center', alignItems: 'center', maxWidth: '400px', margin: '40px auto 0' }}>
-          
+        <a
             href="https://wa.me/6285357106000"
             target="_blank"
             rel="noopener noreferrer"
@@ -397,7 +397,7 @@ export default function Home() {
               gap: '24px'
             }}>
               {[
-                { icon: '✓', title: 'Travel Terpercaya', desc: 'Hanya dari travel yang telah terverifikasi' },
+                { icon: '✓', title: 'Travel Terpercaya', desc: 'Paket umroh dari Travel yang telah terverifikasi' },
                 { icon: '💰', title: 'Harga Kompetitif', desc: 'Bandingkan harga dan pilih yang terbaik' },
                 { icon: '🛡️', title: 'Aman', desc: 'Proses booking yang transparan' }
               ].map((feature, idx) => (
