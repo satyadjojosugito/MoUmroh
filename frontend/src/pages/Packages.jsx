@@ -1,9 +1,55 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
- 
+
 const API_URL = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
- 
+
+// Any image URL pointing at the defunct placeholder service is treated as "no image"
+const isDeadPlaceholder = (url) =>
+  !url || /via\.placeholder\.com|placeholder\.com/i.test(url);
+
+function PackageImage({ src, alt }) {
+  const [failed, setFailed] = useState(false);
+  const showFallback = failed || isDeadPlaceholder(src);
+
+  return (
+    <div style={{
+      width: '100%',
+      height: '180px',
+      backgroundColor: '#f0f0f0',
+      overflow: 'hidden',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      {showFallback ? (
+        <div style={{
+          textAlign: 'center',
+          color: '#b0b0b0',
+          fontSize: '13px',
+          fontWeight: '600',
+          letterSpacing: '0.5px'
+        }}>
+          <div style={{ fontSize: '32px', marginBottom: '6px' }}>🕌</div>
+          MoUmroh
+        </div>
+      ) : (
+        <img
+          src={src}
+          alt={alt}
+          onError={() => setFailed(true)}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block'
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
 export default function Packages() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -19,7 +65,7 @@ export default function Packages() {
   const [departureCities, setDepartureCities] = useState([]);
   const [years, setYears] = useState([]);
   const [agencyMap, setAgencyMap] = useState({});
- 
+
   // Initialize years and cities on mount
   useEffect(() => {
     // Generate years from current year to 5 years ahead
@@ -29,11 +75,11 @@ export default function Packages() {
       yearList.push(i.toString());
     }
     setYears(yearList);
- 
+
     // Fetch packages to extract unique departure cities
     fetchAllPackages();
   }, []);
- 
+
   const fetchAllPackages = async () => {
     try {
       const [pkgRes, agencyRes] = await Promise.all([
@@ -44,71 +90,89 @@ export default function Packages() {
       (agencyRes.data || []).forEach(a => { map[String(a.id)] = a.name; });
       setAgencyMap(map);
       const uniqueCities = [...new Set(pkgRes.data.map(pkg => pkg.departureCity))];
-      setDepartureCities(uniqueCities.sort());
+      setDepartureCities(uniqueCities.filter(Boolean).sort());
     } catch (error) {
       console.error('Error fetching cities:', error);
     }
   };
- 
+
   useEffect(() => {
     const fetchPackages = async () => {
       try {
         setLoading(true);
-        const params = new URLSearchParams();
-        if (filters.search) params.append('search', filters.search);
-        if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
-        if (filters.departureCity) params.append('departureCity', filters.departureCity);
-        if (filters.departureMonth) params.append('departureMonth', filters.departureMonth);
-        if (filters.departureYear) params.append('departureYear', filters.departureYear);
- 
-        const response = await axios.get(`${API_URL}/packages`);
+        const params = {};
+        if (filters.search) params.search = filters.search;
+        if (filters.maxPrice) params.maxPrice = filters.maxPrice;
+        if (filters.departureCity) params.departureCity = filters.departureCity;
+        if (filters.departureMonth) params.departureMonth = filters.departureMonth;
+        if (filters.departureYear) params.departureYear = filters.departureYear;
+
+        const response = await axios.get(`${API_URL}/packages`, { params });
         setPackages(response.data);
-        setLoading(false);
       } catch (error) {
         console.error('Error fetching packages:', error);
+        setPackages([]);
+      } finally {
         setLoading(false);
       }
     };
- 
+
     fetchPackages();
   }, [filters]);
- 
+
   const handleFilterChange = (key, value) => {
     setFilters({ ...filters, [key]: value });
   };
- 
+
   // Format functions - MUST be defined before JSX
   const formatCurrency = (amount) => {
     return `Rp${amount?.toLocaleString('id-ID') || '0'}`;
   };
- 
+
   const getAgencyLabel = (value) => {
     if (!value) return '';
     if (agencyMap[value]) return agencyMap[value];
     return /^[a-f0-9]{24}$/i.test(value) ? '' : value;
   };
-  
+
   const formatDateMonthYear = (dateString) => {
     if (!dateString) return '';
     const options = { year: 'numeric', month: 'long' };
     return new Date(dateString).toLocaleDateString('id-ID', options);
   };
- 
+
   const months = [
-    { value: '1', label: 'January' },
-    { value: '2', label: 'February' },
-    { value: '3', label: 'March' },
+    { value: '1', label: 'Januari' },
+    { value: '2', label: 'Februari' },
+    { value: '3', label: 'Maret' },
     { value: '4', label: 'April' },
-    { value: '5', label: 'May' },
-    { value: '6', label: 'June' },
-    { value: '7', label: 'July' },
-    { value: '8', label: 'August' },
+    { value: '5', label: 'Mei' },
+    { value: '6', label: 'Juni' },
+    { value: '7', label: 'Juli' },
+    { value: '8', label: 'Agustus' },
     { value: '9', label: 'September' },
-    { value: '10', label: 'October' },
+    { value: '10', label: 'Oktober' },
     { value: '11', label: 'November' },
-    { value: '12', label: 'December' },
+    { value: '12', label: 'Desember' },
   ];
- 
+
+  const selectStyle = {
+    width: '100%',
+    padding: '10px 12px',
+    border: '1px solid #ddd',
+    borderRadius: '6px',
+    fontSize: '14px',
+    boxSizing: 'border-box'
+  };
+
+  const labelStyle = {
+    display: 'block',
+    fontSize: '14px',
+    fontWeight: '600',
+    marginBottom: '8px',
+    color: '#000'
+  };
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#ffffff' }}>
       {/* Header */}
@@ -152,7 +216,7 @@ export default function Packages() {
           </p>
         </div>
       </section>
- 
+
       <div style={{
         maxWidth: '1200px',
         margin: '0 auto',
@@ -180,7 +244,7 @@ export default function Packages() {
             }}>
               Filter
             </h3>
- 
+
             {/* Filter Grid */}
             <div style={{
               display: 'grid',
@@ -189,26 +253,11 @@ export default function Packages() {
             }}>
               {/* Departure City */}
               <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  marginBottom: '8px',
-                  color: '#000'
-                }}>
-                  Kota Keberangkatan
-                </label>
+                <label style={labelStyle}>Kota Keberangkatan</label>
                 <select
                   value={filters.departureCity}
                   onChange={(e) => handleFilterChange('departureCity', e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    border: '1px solid #ddd',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    boxSizing: 'border-box'
-                  }}
+                  style={selectStyle}
                 >
                   <option value="">Semua Kota</option>
                   {departureCities.map(city => (
@@ -218,29 +267,14 @@ export default function Packages() {
                   ))}
                 </select>
               </div>
- 
+
               {/* Departure Month */}
               <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  marginBottom: '8px',
-                  color: '#000'
-                }}>
-                  Bulan Keberangkatan
-                </label>
+                <label style={labelStyle}>Bulan Keberangkatan</label>
                 <select
                   value={filters.departureMonth}
                   onChange={(e) => handleFilterChange('departureMonth', e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    border: '1px solid #ddd',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    boxSizing: 'border-box'
-                  }}
+                  style={selectStyle}
                 >
                   <option value="">Semua Bulan</option>
                   {months.map(month => (
@@ -250,29 +284,14 @@ export default function Packages() {
                   ))}
                 </select>
               </div>
- 
+
               {/* Departure Year */}
               <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  marginBottom: '8px',
-                  color: '#000'
-                }}>
-                  Tahun Keberangkatan
-                </label>
+                <label style={labelStyle}>Tahun Keberangkatan</label>
                 <select
                   value={filters.departureYear}
                   onChange={(e) => handleFilterChange('departureYear', e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    border: '1px solid #ddd',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    boxSizing: 'border-box'
-                  }}
+                  style={selectStyle}
                 >
                   <option value="">Semua Tahun</option>
                   {years.map(year => (
@@ -282,34 +301,19 @@ export default function Packages() {
                   ))}
                 </select>
               </div>
- 
+
               {/* Price Maximum */}
               <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  marginBottom: '8px',
-                  color: '#000'
-                }}>
-                  Harga Maksimal (Rp)
-                </label>
+                <label style={labelStyle}>Harga Maksimal (Rp)</label>
                 <input
                   type="number"
                   placeholder="0"
                   value={filters.maxPrice}
                   onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    border: '1px solid #ddd',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    boxSizing: 'border-box'
-                  }}
+                  style={selectStyle}
                 />
               </div>
- 
+
               {/* Reset Button */}
               <div style={{
                 display: 'flex',
@@ -335,7 +339,7 @@ export default function Packages() {
             </div>
           </aside>
         </div>
- 
+
         {/* Main Content */}
         <main>
           {loading ? (
@@ -353,7 +357,7 @@ export default function Packages() {
               }}>
                 Menampilkan {packages.length} paket
               </p>
- 
+
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
@@ -372,6 +376,8 @@ export default function Packages() {
                   onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
                   onClick={() => navigate(`/package/${pkg.id}`)}
                   >
+                    <PackageImage src={pkg.image} alt={pkg.name} />
+
                     {/* Content */}
                     <div style={{ padding: '16px' }}>
                       <h3 style={{
@@ -383,7 +389,7 @@ export default function Packages() {
                       }}>
                         {pkg.name}
                       </h3>
- 
+
                       {/* Agency */}
                       {pkg.agencies && (
                         <p style={{
@@ -395,7 +401,7 @@ export default function Packages() {
                           🏢 {getAgencyLabel(pkg.agencies)}
                         </p>
                       )}
- 
+
                       <p style={{
                         fontSize: '13px',
                         color: '#666',
@@ -403,7 +409,7 @@ export default function Packages() {
                       }}>
                         ✈️ Tujuan: {pkg.destination}
                       </p>
- 
+
                       <p style={{
                         fontSize: '13px',
                         color: '#666',
@@ -411,7 +417,7 @@ export default function Packages() {
                       }}>
                         📍 Keberangkatan: {pkg.departureCity}
                       </p>
- 
+
                       <p style={{
                         fontSize: '13px',
                         color: '#666',
@@ -419,7 +425,7 @@ export default function Packages() {
                       }}>
                         📅 Berangkat: {formatDateMonthYear(pkg.departureDate)}
                       </p>
- 
+
                       {/* Specs */}
                       <div style={{
                         display: 'flex',
@@ -431,7 +437,7 @@ export default function Packages() {
                       }}>
                         <span>📅 {pkg.duration} Hari</span>
                       </div>
- 
+
                       {/* Price and Button */}
                       <div style={{
                         display: 'flex',
@@ -487,4 +493,3 @@ export default function Packages() {
     </div>
   );
 }
- 

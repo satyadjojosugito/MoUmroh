@@ -4,6 +4,52 @@ import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
 
+// Any image URL pointing at the defunct placeholder service is treated as "no image"
+const isDeadPlaceholder = (url) =>
+  !url || /via\.placeholder\.com|placeholder\.com/i.test(url);
+
+function PackageImage({ src, alt }) {
+  const [failed, setFailed] = useState(false);
+  const showFallback = failed || isDeadPlaceholder(src);
+
+  return (
+    <div style={{
+      width: '100%',
+      height: '260px',
+      backgroundColor: '#f0f0f0',
+      overflow: 'hidden',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      {showFallback ? (
+        <div style={{
+          textAlign: 'center',
+          color: '#b0b0b0',
+          fontSize: '13px',
+          fontWeight: '600',
+          letterSpacing: '0.5px'
+        }}>
+          <div style={{ fontSize: '32px', marginBottom: '6px' }}>🕌</div>
+          MoUmroh
+        </div>
+      ) : (
+        <img
+          src={src}
+          alt={alt}
+          onError={() => setFailed(true)}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block'
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
 export default function Home() {
   const navigate = useNavigate();
   const [packages, setPackages] = useState([]);
@@ -177,23 +223,7 @@ export default function Home() {
                 onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
                 onClick={() => navigate(`/package/${pkg.id}`)}
                 >
-                  <div style={{
-                    width: '100%',
-                    height: '260px',
-                    backgroundColor: '#f0f0f0',
-                    overflow: 'hidden'
-                  }}>
-                    <img
-                      src={pkg.image || 'https://via.placeholder.com/400x300?text=No+Image'}
-                      alt={pkg.name}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        display: 'block'
-                      }}
-                    />
-                  </div>
+                  <PackageImage src={pkg.image} alt={pkg.name} />
                   <div style={{ padding: '14px' }}>
                     <h3 style={{
                       fontSize: '15px',
