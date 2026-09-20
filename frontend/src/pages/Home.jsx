@@ -364,7 +364,7 @@ export default function Home() {
               {[
                 { icon: '✓', title: 'Travel Terpercaya', desc: 'Paket umroh dari Travel yang telah terverifikasi' },
                 { icon: '💰', title: 'Harga Kompetitif', desc: 'Bandingkan harga dan pilih yang terbaik' },
-                { icon: '🛡️', title: 'Aman & Terpercaya', desc: 'Proses booking yang transparan dan aman' }
+                { icon: '🛡️', title: 'Aman', desc: 'Proses booking yang transparan' }
               ].map((feature, idx) => (
                 <div key={idx} style={{
                   textAlign: 'center',
