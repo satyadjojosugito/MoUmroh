@@ -357,6 +357,24 @@ export default function Home() {
           >
             💬 Hubungi Kami
           </a>
+                    <Link
+            to="/packages"
+            style={{
+              display: 'block',
+              width: '100%',
+              padding: '14px 40px',
+              backgroundColor: '#fff',
+              color: '#000',
+              border: '2px solid #000',
+              borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: '600',
+              textDecoration: 'none',
+              boxSizing: 'border-box'
+            }}
+          >
+            Lihat Semua Paket →
+          </Link>
         </div>
       </section>
 
