@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { MapPin, Calendar, Clock, Check } from 'lucide-react';
-
+import useSeo from '../hooks/useSeo';
 const API_URL = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
 
 export default function PackageDetail() {
@@ -33,7 +33,12 @@ export default function PackageDetail() {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString('id-ID', options);
   };
-
+  useSeo(
+    pkg ? `${pkg.name} — ${pkg.duration} Hari dari ${pkg.departureCity}` : null,
+    pkg
+      ? `Paket umroh ${pkg.duration} hari ke ${pkg.destination}, berangkat ${formatDate(pkg.departureDate)} dari ${pkg.departureCity}. Mulai Rp${pkg.price?.toLocaleString('id-ID')} per orang.`
+      : null
+  );
   if (loading) {
     return (
       <div style={{

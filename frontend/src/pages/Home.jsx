@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import useSeo from '../hooks/useSeo';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
 
@@ -86,11 +87,15 @@ const SEO_GROUPS = [
 ];
 
 export default function Home() {
+  useSeo(
+    'Marketplace Paket Umroh dari Travel Terpercaya',
+    'Bandingkan paket umroh dari berbagai travel terverifikasi di Indonesia. Lihat harga, kota keberangkatan, dan jadwal dalam satu tempat.'
+  );
+
   const navigate = useNavigate();
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [agencyMap, setAgencyMap] = useState({});
-
   useEffect(() => {
     fetchPackages();
   }, []);

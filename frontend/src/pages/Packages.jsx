@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-
+import useSeo from '../hooks/useSeo';
 const API_URL = process.env.REACT_APP_API_URL || 'https://mo-umroh-backend.vercel.app/api';
 
 // The placeholder service is defunct, so treat any such URL as "no image"
@@ -191,7 +191,10 @@ export default function Packages() {
   };
 
   const hasActiveFilters = FILTER_KEYS.some(k => filters[k]);
-
+  useSeo(
+    activeHeading(),
+    `${activeHeading()} — bandingkan harga, jadwal keberangkatan, dan durasi dari travel terverifikasi.`
+  );
   const selectStyle = {
     width: '100%',
     padding: '10px 12px',
